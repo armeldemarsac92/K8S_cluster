@@ -1,0 +1,4 @@
+vagrant/boxes/machine_1.box filter=lfs diff=lfs merge=lfs -text
+vagrant/boxes/machine_2.box filter=lfs diff=lfs merge=lfs -text
+vagrant/boxes/machine_3.box filter=lfs diff=lfs merge=lfs -text
+vagrant/boxes/machine_4.box filter=lfs diff=lfs merge=lfs -text
