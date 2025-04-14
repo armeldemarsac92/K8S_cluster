@@ -49,7 +49,7 @@ Vagrant.configure("2") do |config|
     # dhcp_server.vm.network "private_network", ip: "192.168.42.128",
     #   virtualbox__intnet: "employee"
 
-    dhcp_server.vm.provider :virtualbox do |vb|
+    dhcp_server.vm.provider "virtualbox" do |vb|
       vb.gui = false
       vb.name = "dhcp_server"
       vb.memory = 2048
@@ -75,7 +75,6 @@ Vagrant.configure("2") do |config|
 
     frontend_server.vm.box = "frontend_server"
 
-    frontend_server.ssh.extra_args = ["-T", "TERM=dumb"]
     frontend_server.ssh.pty = true
     frontend_server.ssh.insert_key = false 
 
@@ -92,10 +91,10 @@ Vagrant.configure("2") do |config|
 
     frontend_server.ssh.port = 3500
 
-    frontend_server.vm.provider :virtualbox do |vb|
+    frontend_server.vm.provider "virtualbox" do |vb|
 
       vb.gui = false
-      vb.name = "fontend_server"
+      vb.name = "frontend_server"
       vb.memory = 2048
       vb.cpus = 2
 
@@ -134,7 +133,7 @@ Vagrant.configure("2") do |config|
 
     database_server.ssh.port = 3501
 
-    database_server.vm.provider :virtualbox do |vb|
+    database_server.vm.provider "virtualbox" do |vb|
 
       vb.gui = false
       vb.name = "database_server"
@@ -176,7 +175,7 @@ Vagrant.configure("2") do |config|
 
     backend_server.ssh.port = 3502
 
-    backend_server.vm.provider :virtualbox do |vb|
+    backend_server.vm.provider "virtualbox" do |vb|
 
       vb.gui = false
       vb.name = "backend_server"
@@ -217,7 +216,7 @@ Vagrant.configure("2") do |config|
 
     control_server.ssh.port = 3503
 
-    control_server.vm.provider :virtualbox do |vb|
+    control_server.vm.provider "virtualbox" do |vb|
 
       vb.gui = false
       vb.name = "control_server"

@@ -20,6 +20,4 @@ echo "All boxes have been added successfully!"
 
 echo "Launching Vagrant configuration"
 
-vagrant up
-
-
+vagrant up --provider virtualbox
