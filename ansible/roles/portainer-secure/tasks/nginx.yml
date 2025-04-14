@@ -1,0 +1,65 @@
+- name: Install EPEL repository
+  yum:
+    name: epel-release
+    state: present
+
+- name: Install NGINX and tools
+  yum:
+    name:
+      - nginx
+      - httpd-tools
+    state: present
+
+- name: Create htpasswd file for basic auth
+  copy:
+    dest: /etc/nginx/.htpasswd
+    content: "{{ portainer_user }}:{{ portainer_password_hash }}"
+    owner: root
+    group: root
+    mode: '0644'
+
+- name: Update main NGINX configuration (IPv4)
+  lineinfile:
+    path: /etc/nginx/nginx.conf
+    regexp: '^\s*listen\s+\d+;'
+    line: '        listen       8080;'
+    backrefs: yes
+
+- name: Update main NGINX configuration (IPv6)
+  lineinfile:
+    path: /etc/nginx/nginx.conf
+    regexp: '^\s*listen\s+\[::\]:\d+;'
+    line: '        listen       [::]:8080;'
+    backrefs: yes
+
+- name: Deploy NGINX reverse proxy config for Portainer
+  template:
+    src: nginx-portainer.conf.j2
+    dest: /etc/nginx/conf.d/portainer.conf
+    owner: root
+    group: root
+    mode: '0644'
+
+- name: Check if firewalld is running
+  command: systemctl is-active firewalld
+  register: firewalld_status
+  changed_when: false
+  failed_when: false
+
+- name: Block direct access to Portainer (port 9000)
+  command: firewall-cmd --permanent --add-rich-rule='rule family="ipv4" source not address="127.0.0.1" port port="9000" protocol="tcp" reject'
+  when: firewalld_status.stdout == "active" and enable_firewalld | default(true)
+
+- name: Allow access to NGINX proxy port
+  command: firewall-cmd --permanent --add-port=8080/tcp
+  when: firewalld_status.stdout == "active" and enable_firewalld | default(true)
+
+- name: Reload firewall
+  command: firewall-cmd --reload
+  when: firewalld_status.stdout == "active" and enable_firewalld | default(true)
+
+- name: Ensure NGINX is enabled and running
+  service:
+    name: nginx
+    state: restarted
+    enabled: true

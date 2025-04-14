@@ -1,0 +1,5 @@
+- name: Enable and start firewalld (needed for fail2ban bans)
+  service:
+    name: firewalld
+    state: started
+    enabled: true
