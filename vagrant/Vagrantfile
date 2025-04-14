@@ -1,0 +1,241 @@
+# -*- mode: ruby -*-
+# vi: set ft=ruby :
+
+Vagrant.configure("2") do |config|
+
+
+
+  config.vm.define "dhcp_server" do |dhcp_server|
+
+    dhcp_server.vm.box = "tvlooy/openbsd-7.6-amd64"
+    dhcp_server.vm.box_version = "20251010"
+
+    # dhcp_server.ssh.insert_key = true  # Change to true to insert a new key
+    # dhcp_server.ssh.private_key_path = "~/.vagrant.d/insecure_private_key"
+
+    dhcp_server.ssh.shell = "/bin/ksh"
+
+    dhcp_server.vm.synced_folder ".", "/vagrant", disabled: true
+
+    #open ports for ssh redirection through bastion host
+
+    #for frontend_server
+    dhcp_server.vm.network "forwarded_port", guest: 3500, host: 3500
+
+    #for database_server
+    dhcp_server.vm.network "forwarded_port", guest: 3501, host: 3501
+
+    #for backend_server
+    dhcp_server.vm.network "forwarded_port", guest: 3502, host: 3502
+
+    #for control_server
+    dhcp_server.vm.network "forwarded_port", guest: 3503, host: 3503
+
+    #open port 3600 for http redirection through gateway
+    dhcp_server.vm.network "forwarded_port", guest: 3600, host: 3600
+
+    dhcp_server.vm.hostname = "dhcpserver"
+
+    dhcp_server.vm.network "private_network", ip: "192.168.1.1",
+      virtualbox__intnet: "appnetwork"
+
+    
+    dhcp_server.vm.network "private_network", ip: "192.168.2.1",
+      virtualbox__intnet: "dbnetwork"
+    
+    # dhcp_server.vm.network "private_network", ip: "192.168.42.64",
+    #   virtualbox__intnet: "server"
+
+    # dhcp_server.vm.network "private_network", ip: "192.168.42.128",
+    #   virtualbox__intnet: "employee"
+
+    dhcp_server.vm.provider :virtualbox do |vb|
+      vb.gui = false
+      vb.name = "dhcp_server"
+      vb.memory = 2048
+      vb.cpus = 1
+
+
+    end
+
+    # To setup python
+    dhcp_server.vm.provision "shell", inline: <<-SHELL
+      pkg_add -r python
+    SHELL
+
+    dhcp_server.vm.provision "ansible" do |ansible|
+
+      ansible.playbook = "dhcp_setup.yml"  
+
+    end
+
+  end
+
+  config.vm.define "frontend_server" do |frontend_server|
+
+    frontend_server.vm.box = "frontend_server"
+
+    frontend_server.ssh.extra_args = ["-T", "TERM=dumb"]
+    frontend_server.ssh.pty = true
+    frontend_server.ssh.insert_key = false 
+
+    frontend_server.ssh.username = "root"
+    frontend_server.ssh.password = "admin"
+
+    frontend_server.vm.synced_folder ".", "/vagrant", disabled: true
+
+    frontend_server.vm.hostname = "frontendserver"
+
+    frontend_server.vm.network "private_network", mac: "080027123458", type: "dhcp", adapter: "1", auto_config: false, virtualbox__intnet: "appnetwork"
+
+    frontend_server.ssh.host = "localhost"
+
+    frontend_server.ssh.port = 3500
+
+    frontend_server.vm.provider :virtualbox do |vb|
+
+      vb.gui = false
+      vb.name = "fontend_server"
+      vb.memory = 2048
+      vb.cpus = 2
+
+    end
+
+    # # To setup python39
+    # webserver.vm.provision "shell", inline: <<-SHELL
+    #   pkg install -y python39
+    # SHELL
+    
+    # webserver.vm.provision "ansible" do |ansible|
+
+    #   ansible.playbook = "frontend_server.yml"
+
+    # end
+
+  end
+
+  config.vm.define "database_server" do |database_server|
+
+    database_server.vm.box = "database_server"
+
+    database_server.ssh.pty = true
+    database_server.ssh.insert_key = false 
+
+    database_server.ssh.username = "root"
+    database_server.ssh.password = "admin"
+
+    database_server.vm.synced_folder ".", "/vagrant", disabled: true
+
+    database_server.vm.hostname = "databaseserver"
+
+    database_server.vm.network "private_network", mac: "080027123459", type: "dhcp", adapter: "1", auto_config: false, virtualbox__intnet: "dbnetwork"
+
+    database_server.ssh.host = "localhost"
+
+    database_server.ssh.port = 3501
+
+    database_server.vm.provider :virtualbox do |vb|
+
+      vb.gui = false
+      vb.name = "database_server"
+      vb.memory = 2048
+      vb.cpus = 2
+
+    end
+
+    # # To setup python39
+    # webserver.vm.provision "shell", inline: <<-SHELL
+    #   pkg install -y python39
+    # SHELL
+    
+    # webserver.vm.provision "ansible" do |ansible|
+
+    #   ansible.playbook = "frontend_server.yml"
+
+    # end
+
+  end
+
+  config.vm.define "backend_server" do |backend_server|
+
+    backend_server.vm.box = "backend_server"
+
+    backend_server.ssh.pty = true
+    backend_server.ssh.insert_key = false 
+
+    backend_server.ssh.username = "root"
+    backend_server.ssh.password = "admin"
+
+    backend_server.vm.synced_folder ".", "/vagrant", disabled: true
+
+    backend_server.vm.hostname = "backendserver"
+
+    backend_server.vm.network "private_network", mac: "080027123460", type: "dhcp", adapter: "1", auto_config: false, virtualbox__intnet: "appnetwork"
+
+    backend_server.ssh.host = "localhost"
+
+    backend_server.ssh.port = 3502
+
+    backend_server.vm.provider :virtualbox do |vb|
+
+      vb.gui = false
+      vb.name = "backend_server"
+      vb.memory = 2048
+      vb.cpus = 2
+
+    end
+
+    # # To setup python39
+    # webserver.vm.provision "shell", inline: <<-SHELL
+    #   pkg install -y python39
+    # SHELL
+    
+    # webserver.vm.provision "ansible" do |ansible|
+
+    #   ansible.playbook = "frontend_server.yml"
+
+    # end
+
+  end
+
+  config.vm.define "control_server" do |control_server|
+
+    control_server.vm.box = "control_server"
+
+    control_server.ssh.pty = true
+    control_server.ssh.insert_key = false 
+    control_server.ssh.username = "root"
+    control_server.ssh.password = "admin"
+
+    control_server.vm.synced_folder ".", "/vagrant", disabled: true
+
+    control_server.vm.hostname = "controlserver"
+
+    control_server.vm.network "private_network", mac: "080027123461", type: "dhcp", adapter: "1", auto_config: false, virtualbox__intnet: "appnetwork"
+
+    control_server.ssh.host = "localhost"
+
+    control_server.ssh.port = 3503
+
+    control_server.vm.provider :virtualbox do |vb|
+
+      vb.gui = false
+      vb.name = "control_server"
+      vb.memory = 2048
+      vb.cpus = 2
+
+    end
+
+    # # To setup python39
+    # webserver.vm.provision "shell", inline: <<-SHELL
+    #   pkg install -y python39
+    # SHELL
+    
+    # webserver.vm.provision "ansible" do |ansible|
+
+    #   ansible.playbook = "frontend_server.yml"
+
+    # end
+
+  end
+end
