@@ -1,0 +1,18 @@
+[nginx-auth]
+enabled = true
+filter = nginx-auth
+action = firewallcmd-ipset
+logpath = /var/log/nginx/error.log
+maxretry = 5
+bantime = 600
+findtime = 120
+backend = auto
+
+[recidive]
+enabled = true
+logpath  = /var/log/fail2ban.log
+banaction = firewallcmd-ipset
+findtime = 86400
+bantime  = -1
+maxretry = 3
+backend = auto

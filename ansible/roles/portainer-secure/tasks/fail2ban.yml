@@ -1,0 +1,39 @@
+---
+- name: Install Fail2Ban
+  yum:
+    name: fail2ban
+    state: present
+
+- name: Create Fail2Ban nginx-auth filter
+  copy:
+    dest: /etc/fail2ban/filter.d/nginx-auth.conf
+    content: |
+      [Definition]
+      failregex = no user/password was provided for basic authentication.*client: <HOST>
+      ignoreregex =
+    owner: root
+    group: root
+    mode: '0644'
+
+- name: Ensure log file exists for Fail2Ban
+  file:
+    path: /var/log/fail2ban.log
+    state: touch
+    owner: root
+    group: root
+    mode: '0644'
+  changed_when: false
+
+- name: Configure Fail2Ban jail.local
+  template:
+    src: fail2ban.conf.j2
+    dest: /etc/fail2ban/jail.local
+    owner: root
+    group: root
+    mode: '0644'
+
+- name: Enable and restart Fail2Ban
+  service:
+    name: fail2ban
+    state: restarted
+    enabled: true
