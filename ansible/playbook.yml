@@ -1,7 +1,0 @@
-- name: Secure Portainer with NGINX + Basic Auth + Fail2Ban
-  hosts: portainer_vm
-  become: yes
-  vars_files:
-    - roles/portainer-secure/vars/vault.yml
-  roles:
-    - portainer-secure

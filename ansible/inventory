@@ -1,2 +1,0 @@
-[portainer]
-portainer_vm ansible_host=localhost ansible_port=1336 ansible_user=root ansible_ssh_pass=admin
