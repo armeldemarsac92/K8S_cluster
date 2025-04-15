@@ -1,0 +1,8 @@
+- hosts: control_server
+  become: yes
+  vars_files:
+    - ../ansible/roles/portainer-secure/vars/vault.yml
+
+  tasks:
+    - name: Install and setup NGINX
+      include_tasks: ../ansible/roles/portainer-secure/tasks/nginx.yml
