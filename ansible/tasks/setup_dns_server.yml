@@ -1,0 +1,37 @@
+- name: Install unbound
+  ansible.builtin.raw: pkg_add unbound
+
+- name: Copy unbound conf files
+  ansible.builtin.copy:
+    src: "{{ item }}"
+    dest: "/var/unbound/etc/"
+  with_fileglob:
+    - "../ressources/dns/*"
+
+- name: Set correct ownership for Unbound config directory
+  ansible.builtin.raw: chown -R _unbound:_unbound /var/unbound/etc
+    
+- name: Set correct permissions for Unbound config directory
+  ansible.builtin.raw: chmod 750 /var/unbound/etc
+  
+- name: Setup unbound control
+  ansible.builtin.raw: unbound-control-setup
+  
+- name: Add Adguard DNS redirection
+  ansible.builtin.raw: unbound-control forward_add . 94.140.14.49 94.140.14.59
+  
+- name: Check Unbound configuration
+  ansible.builtin.raw: unbound-checkconf
+
+- name: Refresh Adguard DNS ip association
+  command: curl https://linkip.adguard-dns.com/linkip/83e2f83c/QxsWQk5f8zk0zyyPrV6iXzjQTttDgY02R3wD4auL1c7
+  
+- name: Force handler to run
+  command: echo "Forcing handler to run"
+  changed_when: true
+  notify: 
+    - restart the network service
+    - enable dns server on reboot
+    - start the dns server
+    
+

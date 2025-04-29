@@ -1,0 +1,43 @@
+- hosts: all
+  become: yes
+
+  tasks:
+#    - name: Setup the bridge interface
+#      include_tasks: ../tasks/setup_bridge_interface.yml
+#
+#    - name: Setup the default gateway
+#      include_tasks: ../tasks/setup_default_gateway.yml      
+    - name: Setup the DNS server
+      include_tasks: ../tasks/setup_dns_server.yml
+
+    - name: Setup the dhcp server
+      include_tasks: ../tasks/setup_dhcp_server.yml
+
+    - name: Setup the packet filtering
+      include_tasks: ../tasks/setup_packet_filter.yml
+      
+    - name: Setup the bridge interface
+      include_tasks: ../tasks/setup_dhcp_client.yml
+
+  handlers:
+    - name: enable dns server on reboot
+      command: rcctl enable unbound
+      
+    - name: start the dns server
+      command: rcctl start unbound
+
+    - name: enable dhcp server on reboot
+      command: rcctl enable dhcpd
+
+    - name: start the dhcp server
+      command: rcctl start dhcpd
+
+    - name: apply changes to pf
+      command: pfctl -f /etc/pf.conf
+
+    - name: enable pf at boot
+      command: pfctl -e
+      ignore_errors: true
+
+    - name: restart the network service
+      command: sh /etc/netstart

@@ -1,0 +1,3 @@
+- name: Setup bridge interface
+  ansible.builtin.raw: ifconfig em3 10.68.243.200 netmask 255.255.0.0 up
+

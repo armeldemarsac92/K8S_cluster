@@ -39,9 +39,13 @@ Vagrant.configure("2") do |config|
     dhcp_server.vm.network "private_network", ip: "192.168.1.1",
       virtualbox__intnet: "appnetwork"
 
-    
     dhcp_server.vm.network "private_network", ip: "192.168.2.1",
       virtualbox__intnet: "dbnetwork"
+      
+    dhcp_server.vm.network "public_network", bridge: "wlp1s0"
+
+      
+
     
     # dhcp_server.vm.network "private_network", ip: "192.168.42.64",
     #   virtualbox__intnet: "server"
@@ -50,6 +54,7 @@ Vagrant.configure("2") do |config|
     #   virtualbox__intnet: "employee"
 
     dhcp_server.vm.provider "virtualbox" do |vb|
+      vb.customize ["modifyvm", :id, "--nicpromisc4", "allow-all"]
       vb.gui = false
       vb.name = "dhcp_server"
       vb.memory = 2048
@@ -65,7 +70,7 @@ Vagrant.configure("2") do |config|
 
     dhcp_server.vm.provision "ansible" do |ansible|
 
-      ansible.playbook = "dhcp_setup.yml"  
+      ansible.playbook = "../ansible/playbooks/dhcp_server_setup.yml"  
 
     end
 

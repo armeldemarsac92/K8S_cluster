@@ -1,0 +1,8 @@
+- name : Install dhcpd client
+  ansible.builtin.raw: pkg_add dhcpcd
+  
+- name : Request a new lease from the dhcpd server for the bridge interface
+  ansible.builtin.raw: dhcpd em3
+  
+- name: Remove the default NAT interface route
+  ansible.builtin.raw: route delete default 10.0.2.2
