@@ -3,8 +3,6 @@
 
 Vagrant.configure("2") do |config|
 
-
-
   config.vm.define "dhcp_server" do |dhcp_server|
 
     dhcp_server.vm.box = "tvlooy/openbsd-7.6-amd64"
@@ -105,16 +103,18 @@ Vagrant.configure("2") do |config|
 
     end
 
-    # # To setup python39
-    # webserver.vm.provision "shell", inline: <<-SHELL
-    #   pkg install -y python39
-    # SHELL
+    frontend_server.vm.provision "shell", path: "../ansible/scripts/install_python312.sh"
     
-    # webserver.vm.provision "ansible" do |ansible|
+    frontend_server.vm.provision "ansible" do |ansible|
+        
+      ansible.extra_vars = {
+        ansible_user: 'root',
+        ansible_password: 'admin'
+        }
 
-    #   ansible.playbook = "frontend_server.yml"
+      ansible.playbook = "../ansible/playbooks/frontend_server_setup.yml"
 
-    # end
+    end
 
   end
 
@@ -147,18 +147,21 @@ Vagrant.configure("2") do |config|
 
     end
 
-    # # To setup python39
-    # webserver.vm.provision "shell", inline: <<-SHELL
-    #   pkg install -y python39
-    # SHELL
+    database_server.vm.provision "shell", path: "../ansible/scripts/install_python312.sh"
+        
+    database_server.vm.provision "ansible" do |ansible|
+        
+      ansible.extra_vars = {
+        ansible_user: 'root',
+        ansible_password: 'admin'
+        }
+
+      ansible.playbook = "../ansible/playbooks/database_server_setup.yml"
+
+    end
     
-    # webserver.vm.provision "ansible" do |ansible|
-
-    #   ansible.playbook = "frontend_server.yml"
-
-    # end
-
   end
+
 
   config.vm.define "backend_server" do |backend_server|
 
@@ -189,16 +192,18 @@ Vagrant.configure("2") do |config|
 
     end
 
-    # # To setup python39
-    # webserver.vm.provision "shell", inline: <<-SHELL
-    #   pkg install -y python39
-    # SHELL
+    backend_server.vm.provision "shell", path: "../ansible/scripts/install_python312.sh"
+            
+    backend_server.vm.provision "ansible" do |ansible|
+        
+      ansible.extra_vars = {
+        ansible_user: 'root',
+        ansible_password: 'admin'
+        }
+
+      ansible.playbook = "../ansible/playbooks/database_server_setup.yml"
     
-    # webserver.vm.provision "ansible" do |ansible|
-
-    #   ansible.playbook = "frontend_server.yml"
-
-    # end
+    end
 
   end
 
@@ -230,16 +235,19 @@ Vagrant.configure("2") do |config|
 
     end
 
-    # # To setup python39
-    # webserver.vm.provision "shell", inline: <<-SHELL
-    #   pkg install -y python39
-    # SHELL
+    control_server.vm.provision "shell", path: "../ansible/scripts/install_python312.sh"
+            
+    control_server.vm.provision "ansible" do |ansible|
+        
+      ansible.extra_vars = {
+        ansible_user: 'root',
+        ansible_password: 'admin'
+        }
+
+      ansible.playbook = "../ansible/playbooks/database_server_setup.yml"
     
-    # webserver.vm.provision "ansible" do |ansible|
-
-    #   ansible.playbook = "frontend_server.yml"
-
-    # end
+    end
 
   end
+  
 end

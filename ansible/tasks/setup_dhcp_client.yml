@@ -4,5 +4,12 @@
 - name : Request a new lease from the dhcpd server for the bridge interface
   ansible.builtin.raw: dhcpd em3
   
-- name: Remove the default NAT interface route
-  ansible.builtin.raw: route delete default 10.0.2.2
+- name: Check if default route via NAT 10.0.2.2 exists
+  ansible.builtin.command: route -n get default
+  register: route_check
+  ignore_errors: yes
+  changed_when: false
+
+- name: Remove the NAT route if it exists
+  ansible.builtin.command: route delete default 10.0.2.2
+  when: "'10.0.2.2' in route_check.stdout"

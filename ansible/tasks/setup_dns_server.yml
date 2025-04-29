@@ -17,6 +17,9 @@
 - name: Setup unbound control
   ansible.builtin.raw: unbound-control-setup
   
+- name: Reload unbound
+  ansible.builtin.raw: rcctl enable unbound && rcctl restart unbound
+  
 - name: Add Adguard DNS redirection
   ansible.builtin.raw: unbound-control forward_add . 94.140.14.49 94.140.14.59
   
