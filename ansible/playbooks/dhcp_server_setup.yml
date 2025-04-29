@@ -7,6 +7,9 @@
 #
 #    - name: Setup the default gateway
 #      include_tasks: ../tasks/setup_default_gateway.yml      
+    - name : Install BSD utils
+      include_tasks: ../tasks/install_BSD_utils.yml
+      
     - name: Setup the DNS server
       include_tasks: ../tasks/setup_dns_server.yml
 

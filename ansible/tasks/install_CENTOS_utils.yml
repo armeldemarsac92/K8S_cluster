@@ -1,0 +1,14 @@
+- name: Install Curl
+  ansible.builtin.raw: yum install curl -y
+  
+- name: Install iputils
+  ansible.builtin.raw: yum install iputils -y
+    
+- name: Install bindutils
+  ansible.builtin.raw: yum install bind-utils -y
+    
+- name: Install strace
+  ansible.builtin.raw: yum install strace -y
+    
+- name: Install telnet
+  ansible.builtin.raw: yum install telnet -y
