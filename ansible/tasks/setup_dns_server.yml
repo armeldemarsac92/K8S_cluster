@@ -22,6 +22,9 @@
   
 - name: Add Quad9 DNS redirection
   ansible.builtin.raw: unbound-control forward_add . 9.9.9.9 149.112.112.112
+
+- name: Enable unbound logging
+  ansible.builtin.raw: unbound-control log_reopen
   
 - name: Check Unbound configuration
   ansible.builtin.raw: unbound-checkconf
