@@ -1,12 +1,9 @@
 - hosts: all
   become: yes
+  vars_files:
+    - ../network_vars.yml
 
   tasks:
-#    - name: Setup the bridge interface
-#      include_tasks: ../tasks/setup_bridge_interface.yml
-#
-#    - name: Setup the default gateway
-#      include_tasks: ../tasks/setup_default_gateway.yml      
     - name : Install BSD utils
       include_tasks: ../tasks/install_BSD_utils.yml
       
@@ -19,8 +16,13 @@
     - name: Setup the packet filtering
       include_tasks: ../tasks/setup_packet_filter.yml
       
-    - name: Setup the bridge interface
+    - name: Setup the dhcp client on the bridge interface
       include_tasks: ../tasks/setup_dhcp_client.yml
+      
+    - name : Remove the default route
+      include_tasks: ../tasks/setup_default_gateway.yml
+      
+
 
   handlers:
     - name: enable dns server on reboot

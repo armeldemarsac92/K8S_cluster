@@ -1,3 +1,5 @@
 dhcpd_flags="em1 em2"
 gateway_enable=YES
 pflog_enabled=YES
+dhcpcd=YES
+dhcpcd_flags="em3"

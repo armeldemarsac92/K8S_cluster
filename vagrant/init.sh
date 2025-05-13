@@ -18,6 +18,12 @@ vagrant box add --name database_server "${BOXES_PATH}/machine_3.box"
 
 echo "All boxes have been added successfully!"
 
+echo "Setting permissions on the network setup file"
+
+chmod chmod 777 ./ansible/scripts/network_setup.sh
+
+echo "Permissions set"
+
 echo "Launching Vagrant configuration"
 
 vagrant up --provider virtualbox

@@ -1,15 +1,16 @@
-- name : Install dhcpd client
-  ansible.builtin.raw: pkg_add dhcpcd
-  
-- name : Request a new lease from the dhcpd server for the bridge interface
-  ansible.builtin.raw: dhcpd em3
-  
-- name: Check if default route via NAT 10.0.2.2 exists
-  ansible.builtin.command: route -n get default
-  register: route_check
-  ignore_errors: yes
+- name: Run network setup script
+  shell: ../scripts/network_setup.sh
+  register: network_setup
   changed_when: false
+  delegate_to: localhost
+  become: no
 
-- name: Remove the NAT route if it exists
-  ansible.builtin.command: route delete default 10.0.2.2
-  when: "'10.0.2.2' in route_check.stdout"
+- name: Show generated IP
+  debug:
+    msg: "Generated IP: {{ network_setup.stdout }}"
+
+- name: Configure network interface with the generated IP
+  ansible.builtin.command: ifconfig em3 {{ target_ip }} netmask {{ host_netmask }} up
+
+- name: Set the hostname with the generated ip
+  ansible.builtin.command: echo "inet {{ target_ip }} netmask {{ host_netmask }}" > /etc/hostname.em3

@@ -20,15 +20,21 @@
 - name: Reload unbound
   ansible.builtin.raw: rcctl enable unbound && rcctl restart unbound
   
-- name: Add Adguard DNS redirection
-  ansible.builtin.raw: unbound-control forward_add . 94.140.14.49 94.140.14.59
+- name: Add Quad9 DNS redirection
+  ansible.builtin.raw: unbound-control forward_add . 9.9.9.9 149.112.112.112
   
 - name: Check Unbound configuration
   ansible.builtin.raw: unbound-checkconf
 
-- name: Refresh Adguard DNS ip association
-  command: curl https://linkip.adguard-dns.com/linkip/83e2f83c/QxsWQk5f8zk0zyyPrV6iXzjQTttDgY02R3wD4auL1c7
-  
+- name: Disable resolvd
+  ansible.builtin.raw: rcctl disable resolvd
+
+- name: Add local DNS
+  ansible.builtin.raw: echo "nameserver 127.0.0.1" > /etc/resolv.conf
+
+- name: Change file permissions
+  ansible.builtin.raw: chmod 644 /etc/resolv.conf
+
 - name: Force handler to run
   command: echo "Forcing handler to run"
   changed_when: true
