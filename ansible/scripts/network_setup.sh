@@ -25,7 +25,7 @@ fi
 echo "Using interface: $PRIMARY_INTERFACE" >&2
 
 # Get default gateway
-DEFAULT_GATEWAY=$(ip route show default | grep -oP 'via \K[^ ]+')
+DEFAULT_GATEWAY=$(ip route show default | head -1 | grep -oP 'via \K[^ ]+')
 echo "Default Gateway: $DEFAULT_GATEWAY" >&2
 
 # Get IP, netmask, and network
