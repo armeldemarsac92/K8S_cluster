@@ -24,6 +24,10 @@ fi
 
 echo "Using interface: $PRIMARY_INTERFACE" >&2
 
+# Get default gateway
+DEFAULT_GATEWAY=$(ip route show default | grep -oP 'via \K[^ ]+')
+echo "Default Gateway: $DEFAULT_GATEWAY" >&2
+
 # Get IP, netmask, and network
 IP_INFO=$(ip -o -4 addr show dev $PRIMARY_INTERFACE | awk '{print $4}')
 IP_ADDR=$(echo $IP_INFO | cut -d/ -f1)
@@ -138,8 +142,10 @@ host_ip: "$IP_ADDR"
 host_network: "$NETWORK"
 host_netmask: "$NETMASK"
 host_cidr: "$CIDR_PREFIX"
+default_gateway: "$DEFAULT_GATEWAY"
 target_ip: "$RANDOM_IP"
 target_interface: "em3"
+host_interface: "$PRIMARY_INTERFACE"
 EOF
 
 echo "Wrote network configuration to $VARS_FILE" >&2
