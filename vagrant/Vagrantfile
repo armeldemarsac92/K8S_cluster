@@ -31,6 +31,9 @@ Vagrant.configure("2") do |config|
     #for control_server
     dhcp_server.vm.network "forwarded_port", guest: 3503, host: 3503
 
+    #for gitea access
+    dhcp_server.vm.network "forwarded_port", guest: 3512, host: 3512
+
     #open port 3600 for http redirection through gateway
     dhcp_server.vm.network "forwarded_port", guest: 3600, host: 3600
 
@@ -184,16 +187,14 @@ Vagrant.configure("2") do |config|
 
     end
 
-    # # To setup python39
-    # webserver.vm.provision "shell", inline: <<-SHELL
-    #   pkg install -y python39
-    # SHELL
+    # To setup python39
+     backend_server.vm.provision "shell", inline: <<-SHELL
+        yum install -y python3
+     SHELL
     
-    # webserver.vm.provision "ansible" do |ansible|
-
-    #   ansible.playbook = "frontend_server.yml"
-
-    # end
+     backend_server.vm.provision "ansible" do |ansible|
+         ansible.playbook = "install_gitea_cli.yml"
+    end
 
   end
 

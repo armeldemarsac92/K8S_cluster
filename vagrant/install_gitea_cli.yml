@@ -1,0 +1,92 @@
+---
+# install_gitea_cli.yml - Playbook to install Gitea CLI (tea) on CentOS
+
+- name: Install Gitea CLI (tea)
+  hosts: all
+  become: true
+  # Add connection settings for authentication
+  vars:
+    ansible_user: root
+    ansible_password: admin
+    ansible_ssh_common_args: '-o StrictHostKeyChecking=no'
+    ansible_port: 3502
+    ansible_host: localhost
+    ansible_python_interpreter: /usr/bin/python3
+    gitea_cli_version: latest  # Change to specific version if needed
+    gitea_cli_arch: amd64      # Change to arm64 if needed
+    gitea_cli_install_dir: /usr/local/bin
+    gitea_instance_url: http://localhost:3512  # Change to your Gitea URL - using port 3512 from Vagrantfile
+    gitea_access_token: ""     # Leave empty for security, provide at runtime
+    gitea_admin_username: adminUser
+    gitea_admin_password: passwordSwag
+    gitea_admin_email: admin@admin.fr
+
+  tasks:
+    - name: Install required packages
+      yum:
+        name:
+          - wget
+          - curl
+        state: present
+
+    - name: Check if tea is already installed
+      stat:
+        path: "{{ gitea_cli_install_dir }}/tea"
+      register: tea_installed
+
+    - name: Download tea CLI using wget
+      when: not tea_installed.stat.exists
+      shell: |
+        cd /tmp
+        wget -O tea https://github.com/go-gitea/tea/releases/download/v0.9.2/tea-linux-amd64 || \
+        wget -O tea https://dl.gitea.com/tea/0.9.2/tea-linux-amd64
+        chmod +x tea
+      args:
+        creates: /tmp/tea
+      register: download_result
+
+    - name: Install tea CLI
+      when: not tea_installed.stat.exists or download_result is changed
+      copy:
+        src: "/tmp/tea"
+        dest: "{{ gitea_cli_install_dir }}/tea"
+        mode: '0755'
+        remote_src: yes
+
+    - name: Remove temporary files
+      file:
+        path: "/tmp/tea"
+        state: absent
+
+    - name: Configure tea CLI (if access token is provided)
+      when: gitea_access_token != ""
+      become: false  # Run as the user, not root
+      shell: |
+        {{ gitea_cli_install_dir }}/tea login add --name gitea-server --url {{ gitea_instance_url }} --token {{ gitea_access_token }}
+      register: config_result
+      failed_when: false
+      changed_when: config_result.rc == 0
+
+    - name: Verify tea CLI installation
+      command: "{{ gitea_cli_install_dir }}/tea --version"
+      register: version_output
+      changed_when: false
+
+    - name: Display tea CLI version
+      debug:
+        var: version_output.stdout
+
+    - name: Create Gitea admin user
+      shell: >
+        docker exec d113dcc0d9e5 /app/gitea/gitea admin create-user
+        --name gitadmin123
+        --password SecurePass123
+        --email gitadmin@example.com
+        --admin
+      register: admin_user_result
+      failed_when: admin_user_result.rc != 0 and "already exists" not in admin_user_result.stderr
+      changed_when: admin_user_result.rc == 0
+
+    - name: Display admin user creation result
+      debug:
+        var: admin_user_result.stdout
