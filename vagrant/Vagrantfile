@@ -80,6 +80,7 @@ Vagrant.configure("2") do |config|
   config.vm.define "frontend_server" do |frontend_server|
 
     frontend_server.vm.box = "frontend_server"
+    frontend_server.vm.box_url = "./boxes/machine_1.box"
 
     frontend_server.ssh.pty = true
     frontend_server.ssh.insert_key = false 
@@ -213,7 +214,6 @@ Vagrant.configure("2") do |config|
   config.vm.define "api_gateway_server" do |api_gateway_server|
 
     config.vm.box = "ubuntu/trusty64"
-    config.vm.box_version = "20191107.0.0"
     
     api_gateway_server.vm.synced_folder ".", "/vagrant", disabled: true
     api_gateway_server.vm.hostname = "apigatewayserver"
@@ -282,7 +282,7 @@ Vagrant.configure("2") do |config|
         ansible_password: 'admin'
         }
 
-      ansible.playbook = "../ansible/playbooks/database_server_setup.yml"
+      ansible.playbook = "../ansible/playbooks/control_server.yml"
     
     end
 
