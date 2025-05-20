@@ -6,3 +6,4 @@
 
   tasks:
     - name : Install kube api server
+      include_tasks: ../tasks/install_kubectl.yml

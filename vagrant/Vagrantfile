@@ -240,6 +240,10 @@ Vagrant.configure("2") do |config|
     api_gateway_server.vm.provision "ansible" do |ansible|
 
       ansible.playbook = "../ansible/playbooks/api_gateway_server_setup.yml"
+      ansible.raw_ssh_args = [
+        "-o HostKeyAlgorithms=ssh-ed25519,ssh-rsa",
+        "-o PubkeyAcceptedAlgorithms=+ssh-rsa",
+        "-o PubkeyAuthentication=yes"]
     
     end
 
