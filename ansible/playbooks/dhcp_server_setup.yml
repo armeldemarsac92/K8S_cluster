@@ -3,6 +3,9 @@
   vars_files:
     - ../network_vars.yml
 
+  vars:
+    ansible_python_interpreter: /usr/local/bin/python
+
   tasks:
     - name : Install BSD utils
       include_tasks: ../tasks/install_BSD_utils.yml
