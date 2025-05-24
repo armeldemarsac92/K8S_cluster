@@ -4,6 +4,3 @@
   vars:
     ansible_python_interpreter: /usr/bin/python3
 
-  tasks:
-    - name : Install kube api server
-      include_tasks: ../tasks/install_kubectl.yml

@@ -107,8 +107,6 @@ Vagrant.configure("2") do |config|
 
     end
 
-    frontend_server.vm.provision "shell", path: "../ansible/scripts/install_python312.sh"
-    
     frontend_server.vm.provision "ansible" do |ansible|
         
       ansible.extra_vars = {
@@ -151,8 +149,6 @@ Vagrant.configure("2") do |config|
 
     end
 
-    database_server.vm.provision "shell", path: "../ansible/scripts/install_python312.sh"
-        
     database_server.vm.provision "ansible" do |ansible|
         
       ansible.extra_vars = {
@@ -196,8 +192,6 @@ Vagrant.configure("2") do |config|
 
     end
 
-    backend_server.vm.provision "shell", path: "../ansible/scripts/install_python312.sh"
-            
     backend_server.vm.provision "ansible" do |ansible|
         
       ansible.extra_vars = {
@@ -213,7 +207,7 @@ Vagrant.configure("2") do |config|
 
   config.vm.define "api_gateway_server" do |api_gateway_server|
 
-    config.vm.box = "ubuntu/trusty64"
+    config.vm.box = "alvistack/ubuntu-20.04"
     
     api_gateway_server.vm.synced_folder ".", "/vagrant", disabled: true
     api_gateway_server.vm.hostname = "apigatewayserver"
@@ -223,6 +217,8 @@ Vagrant.configure("2") do |config|
     api_gateway_server.ssh.host = "localhost"
 
     api_gateway_server.ssh.port = 3504
+
+
 
     api_gateway_server.vm.provider "virtualbox" do |vb|
 
@@ -240,10 +236,6 @@ Vagrant.configure("2") do |config|
     api_gateway_server.vm.provision "ansible" do |ansible|
 
       ansible.playbook = "../ansible/playbooks/api_gateway_server_setup.yml"
-      ansible.raw_ssh_args = [
-        "-o HostKeyAlgorithms=ssh-ed25519,ssh-rsa",
-        "-o PubkeyAcceptedAlgorithms=+ssh-rsa",
-        "-o PubkeyAuthentication=yes"]
     
     end
 
@@ -277,8 +269,6 @@ Vagrant.configure("2") do |config|
 
     end
 
-    control_server.vm.provision "shell", path: "../ansible/scripts/install_python312.sh"
-            
     control_server.vm.provision "ansible" do |ansible|
         
       ansible.extra_vars = {
@@ -286,7 +276,7 @@ Vagrant.configure("2") do |config|
         ansible_password: 'admin'
         }
 
-      ansible.playbook = "../ansible/playbooks/control_server.yml"
+      ansible.playbook = "../ansible/playbooks/control_server_setup.yml"
     
     end
 

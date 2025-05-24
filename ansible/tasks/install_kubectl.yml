@@ -1,5 +1,12 @@
 - name: Download with curl
-  ansible.builtin.raw: curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"
+  get_url:
+    url: https://dl.k8s.io/release/v1.29.0/bin/linux/amd64/kubectl
+    dest: /tmp/kubectl
+    mode: '0755'
 
 - name: Install kubectl
-  ansible.builtin.raw: sudo install -o root -g root -m 0755 kubectl /usr/local/bin/kubectl
+  become: yes
+  shell: |
+    install -o root -g root -m 0755 /tmp/kubectl /usr/local/bin/kubectl
+  args:
+    creates: /usr/local/bin/kubectl
