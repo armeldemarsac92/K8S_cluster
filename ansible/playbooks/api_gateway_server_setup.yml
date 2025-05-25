@@ -1,6 +1,15 @@
 - hosts: all
   become: yes
-  
   vars:
     ansible_python_interpreter: /usr/bin/python3
-
+    kubernetes_version: "1.29"
+    containerd_version: "1.6.12"
+    master_node_ip: 192.168.10.14
+    master_hostname: "controlserver" 
+  tasks:
+    - name: Install Kubernetes
+      include_tasks: ../tasks/install_k8s_ubuntu.yml
+      run_once: true
+      
+    - name: Join cluster
+      include_tasks: ../tasks/join_cluster.yml

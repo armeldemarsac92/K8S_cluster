@@ -23,6 +23,3 @@ chmod chmod 777 ./ansible/scripts/network_setup.sh
 
 echo "Permissions set"
 
-echo "Launching Vagrant configuration"
-
-vagrant up --provider virtualbox

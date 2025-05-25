@@ -1,0 +1,304 @@
+---
+# Ubuntu Kubernetes setup with idempotency checks
+
+- name: Update system packages
+  apt:
+    update_cache: yes
+    upgrade: dist
+    cache_valid_time: 3600
+
+- name: Install required packages
+  apt:
+    name:
+      - apt-transport-https
+      - ca-certificates
+      - curl
+      - gnupg
+      - lsb-release
+      - software-properties-common
+    state: present
+
+# Step 1: Install containerd with checks
+- name: Check if containerd is already installed
+  stat:
+    path: /usr/local/bin/containerd
+  register: containerd_installed
+
+- name: Download containerd
+  get_url:
+    url: "https://github.com/containerd/containerd/releases/download/v{{ containerd_version }}/containerd-{{ containerd_version }}-linux-amd64.tar.gz"
+    dest: /tmp/containerd.tar.gz
+    mode: '0644'
+  when: not containerd_installed.stat.exists
+
+- name: Extract containerd to /usr/local
+  unarchive:
+    src: /tmp/containerd.tar.gz
+    dest: /usr/local
+    remote_src: yes
+    owner: root
+    group: root
+  when: not containerd_installed.stat.exists
+
+- name: Check if containerd service file exists
+  stat:
+    path: /etc/systemd/system/containerd.service
+  register: containerd_service_exists
+
+- name: Download containerd systemd service file
+  get_url:
+    url: https://raw.githubusercontent.com/containerd/containerd/main/containerd.service
+    dest: /etc/systemd/system/containerd.service
+    mode: '0644'
+  when: not containerd_service_exists.stat.exists
+
+- name: Create containerd config directory
+  file:
+    path: /etc/containerd
+    state: directory
+    mode: '0755'
+
+- name: Check if containerd config exists
+  stat:
+    path: /etc/containerd/config.toml
+  register: containerd_config_exists
+
+- name: Generate default containerd configuration
+  shell: containerd config default > /etc/containerd/config.toml
+  when: not containerd_config_exists.stat.exists
+
+- name: Check if SystemdCgroup is already configured
+  shell: grep -q "SystemdCgroup = true" /etc/containerd/config.toml
+  register: systemd_cgroup_configured
+  failed_when: false
+  changed_when: false
+
+- name: Configure containerd to use systemd cgroup driver
+  replace:
+    path: /etc/containerd/config.toml
+    regexp: 'SystemdCgroup = false'
+    replace: 'SystemdCgroup = true'
+  when: systemd_cgroup_configured.rc != 0
+
+- name: Enable and start containerd
+  systemd:
+    name: containerd
+    enabled: yes
+    state: started
+    daemon_reload: yes
+
+# Step 2: Install runc with check
+- name: Check if runc is already installed
+  stat:
+    path: /usr/local/sbin/runc
+  register: runc_installed
+
+- name: Download runc
+  get_url:
+    url: https://github.com/opencontainers/runc/releases/download/v1.1.9/runc.amd64
+    dest: /usr/local/sbin/runc
+    mode: '0755'
+  when: not runc_installed.stat.exists
+
+# Step 3: Install CNI plugins with checks
+- name: Create CNI bin directory
+  file:
+    path: /opt/cni/bin
+    state: directory
+    mode: '0755'
+
+- name: Check if CNI plugins are already installed
+  stat:
+    path: /opt/cni/bin/bridge
+  register: cni_plugins_installed
+
+- name: Download CNI plugins
+  get_url:
+    url: https://github.com/containernetworking/plugins/releases/download/v1.3.0/cni-plugins-linux-amd64-v1.3.0.tgz
+    dest: /tmp/cni-plugins.tgz
+    mode: '0644'
+  when: not cni_plugins_installed.stat.exists
+
+- name: Extract CNI plugins
+  unarchive:
+    src: /tmp/cni-plugins.tgz
+    dest: /opt/cni/bin
+    remote_src: yes
+    owner: root
+    group: root
+  when: not cni_plugins_installed.stat.exists
+
+# Step 4: Configure system settings with checks
+- name: Check if kernel modules are loaded
+  shell: lsmod | grep -E "^(overlay|br_netfilter)"
+  register: modules_loaded
+  failed_when: false
+  changed_when: false
+
+- name: Load kernel modules
+  modprobe:
+    name: "{{ item }}"
+    state: present
+  loop:
+    - overlay
+    - br_netfilter
+  when: item not in modules_loaded.stdout
+
+- name: Configure modules to load at boot
+  copy:
+    dest: /etc/modules-load.d/k8s.conf
+    content: |
+      overlay
+      br_netfilter
+    mode: '0644'
+
+- name: Configure sysctl settings for Kubernetes
+  copy:
+    dest: /etc/sysctl.d/k8s.conf
+    content: |
+      net.bridge.bridge-nf-call-iptables = 1
+      net.bridge.bridge-nf-call-ip6tables = 1
+      net.ipv4.ip_forward = 1
+    mode: '0644'
+  register: sysctl_config
+
+- name: Apply sysctl settings only if config changed
+  shell: sysctl --system
+  when: sysctl_config.changed
+
+- name: Check current swap status
+  shell: swapon --show
+  register: swap_status
+  failed_when: false
+  changed_when: false
+
+- name: Disable swap permanently
+  shell: |
+    swapoff -a
+    sed -i '/ swap / s/^\(.*\)$/#\1/g' /etc/fstab
+  when: swap_status.stdout != ""
+
+# Step 5: Install Kubernetes packages with checks
+- name: Create apt keyrings directory
+  file:
+    path: /etc/apt/keyrings
+    state: directory
+    mode: '0755'
+
+- name: Check if Kubernetes GPG key exists
+  stat:
+    path: /etc/apt/keyrings/kubernetes-apt-keyring.gpg
+  register: k8s_gpg_key_exists
+
+- name: Add Kubernetes GPG key
+  shell: |
+    curl -fsSL https://pkgs.k8s.io/core:/stable:/v{{ kubernetes_version }}/deb/Release.key | \
+    gpg --dearmor -o /etc/apt/keyrings/kubernetes-apt-keyring.gpg
+  when: not k8s_gpg_key_exists.stat.exists
+
+- name: Check if Kubernetes repository exists
+  stat:
+    path: /etc/apt/sources.list.d/kubernetes.list
+  register: k8s_repo_exists
+
+- name: Add Kubernetes repository
+  apt_repository:
+    repo: "deb [signed-by=/etc/apt/keyrings/kubernetes-apt-keyring.gpg] https://pkgs.k8s.io/core:/stable:/v{{ kubernetes_version }}/deb/ /"
+    filename: kubernetes
+    state: present
+  when: not k8s_repo_exists.stat.exists
+
+- name: Update apt cache after adding repo
+  apt:
+    update_cache: yes
+  when: not k8s_repo_exists.stat.exists
+
+- name: Check if Kubernetes packages are installed
+  shell: dpkg -l | grep -E "^ii\s+(kubelet|kubeadm|kubectl)\s"
+  register: k8s_packages_installed
+  failed_when: false
+  changed_when: false
+
+- name: Install Kubernetes packages
+  apt:
+    name:
+      - kubelet
+      - kubeadm
+      - kubectl
+    state: present
+  when: k8s_packages_installed.rc != 0
+
+- name: Hold Kubernetes packages to prevent updates
+  shell: apt-mark hold {{ item }}
+  loop:
+    - kubelet
+    - kubeadm
+    - kubectl
+  when: k8s_packages_installed.rc != 0
+
+- name: Check if kubelet is enabled
+  shell: systemctl is-enabled kubelet
+  register: kubelet_enabled
+  failed_when: false
+  changed_when: false
+
+- name: Enable kubelet
+  systemd:
+    name: kubelet
+    enabled: yes
+  when: kubelet_enabled.stdout != "enabled"
+
+# Step 6: Configure crictl
+- name: Check if crictl config exists
+  stat:
+    path: /etc/crictl.yaml
+  register: crictl_config_exists
+
+- name: Create crictl configuration
+  copy:
+    dest: /etc/crictl.yaml
+    content: |
+      runtime-endpoint: unix:///run/containerd/containerd.sock
+      image-endpoint: unix:///run/containerd/containerd.sock
+      timeout: 2
+      debug: false
+      pull-image-on-create: false
+    mode: '0644'
+  when: not crictl_config_exists.stat.exists
+
+- name: Clean up downloaded files
+  file:
+    path: "{{ item }}"
+    state: absent
+  loop:
+    - /tmp/containerd.tar.gz
+    - /tmp/cni-plugins.tgz
+
+- name: Verify installations
+  shell: |
+    echo "=== Containerd Version ==="
+    containerd --version
+    echo "=== Runc Version ==="
+    runc --version
+    echo "=== Kubernetes Versions ==="
+    kubelet --version
+    kubeadm version
+    kubectl version --client
+    echo "=== CNI Plugins ==="
+    ls -la /opt/cni/bin/
+  register: versions_output
+  changed_when: false
+
+- name: Display installation versions
+  debug:
+    var: versions_output.stdout_lines
+
+- name: Create setup completion marker
+  copy:
+    content: |
+      Kubernetes Ubuntu setup completed on: {{ ansible_date_time.iso8601 }}
+      Host: {{ inventory_hostname }}
+      Containerd version: {{ containerd_version }}
+      Kubernetes version: {{ kubernetes_version }}
+    dest: /etc/k8s-ubuntu-setup-complete.marker
+    mode: '0644'

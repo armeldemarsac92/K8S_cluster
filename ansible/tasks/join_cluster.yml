@@ -1,0 +1,44 @@
+- name: Check if node is already part of cluster
+  shell: kubectl get nodes --kubeconfig=/etc/kubernetes/kubelet.conf 2>/dev/null | grep $(hostname) || echo "not_joined"
+  register: node_status
+  failed_when: false
+  changed_when: false
+
+- name: Read join command from host machine
+  set_fact:
+    join_command: "{{ lookup('file', './k8s-join-command.txt') }}"
+  when: "'not_joined' in node_status.stdout"
+
+- name: Join worker node to cluster
+  shell: "{{ join_command }}"
+  register: join_result
+  when: "'not_joined' in node_status.stdout"
+
+- name: Display join result
+  debug:
+    var: join_result.stdout_lines
+  when: join_result is defined and join_result.changed
+
+- name: Wait for node to be ready
+  shell: kubectl get node $(hostname) --no-headers | awk '{print $2}'
+  environment:
+    KUBECONFIG: /etc/kubernetes/kubelet.conf
+  register: node_ready_status
+  until: node_ready_status.stdout == "Ready"
+  retries: 30
+  delay: 10
+  changed_when: false
+  failed_when: false
+
+- name: Verify node has joined cluster
+  shell: kubectl get nodes
+  delegate_to: control_server
+  environment:
+    KUBECONFIG: /etc/kubernetes/admin.conf
+  register: cluster_nodes
+  changed_when: false
+
+- name: Display cluster nodes
+  debug:
+    var: cluster_nodes.stdout_lines
+  run_once: true

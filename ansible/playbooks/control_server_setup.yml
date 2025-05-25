@@ -3,10 +3,19 @@
   
   vars:
     ansible_python_interpreter: /usr/bin/python3.12
+    containerd_device: "/dev/sdb"
+    containerd_mount_point: "/var/lib/containerd-storage"
+    containerd_original: "/var/lib/containerd"
 
   tasks:
     - name : Install CENTOS utils
       include_tasks: ../tasks/install_CENTOS_utils.yml
 
     - name: Install Kubernetes
-      include_tasks: ../tasks/install_kubectl.yml
+      include_tasks: ../tasks/install_k8s_centos.yml
+
+    - name: Setup cluster
+      include_tasks: ../tasks/setup_cluster.yml
+
+    - name: Install helm
+      include_tasks: ../tasks/install_helm.yml
