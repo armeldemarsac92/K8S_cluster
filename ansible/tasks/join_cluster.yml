@@ -29,16 +29,3 @@
   delay: 10
   changed_when: false
   failed_when: false
-
-- name: Verify node has joined cluster
-  shell: kubectl get nodes
-  delegate_to: control_server
-  environment:
-    KUBECONFIG: /etc/kubernetes/admin.conf
-  register: cluster_nodes
-  changed_when: false
-
-- name: Display cluster nodes
-  debug:
-    var: cluster_nodes.stdout_lines
-  run_once: true

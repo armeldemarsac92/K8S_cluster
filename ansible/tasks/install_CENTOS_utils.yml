@@ -8,3 +8,6 @@
     - telnet
   register: utils_install
   changed_when: "'Nothing to do' not in utils_install.stdout"
+
+- name: Install PyKube
+  shell: /root/.pyenv/versions/3.12.1/bin/pip install kubernetes PyYAML

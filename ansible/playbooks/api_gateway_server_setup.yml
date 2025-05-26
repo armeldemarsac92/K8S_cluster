@@ -6,6 +6,7 @@
     containerd_version: "1.6.12"
     master_node_ip: 192.168.10.14
     master_hostname: "controlserver" 
+
   tasks:
     - name: Install Kubernetes
       include_tasks: ../tasks/install_k8s_ubuntu.yml
