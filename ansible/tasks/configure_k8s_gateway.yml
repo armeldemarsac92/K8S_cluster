@@ -36,16 +36,6 @@
   register: kong_release_info
   ignore_errors: true
 
-- name: Install Kong gateway
-  kubernetes.core.helm:
-    name: kong
-    chart_ref: kong/ingress
-    namespace: kong
-    create_namespace: true
-    values_files:
-      - /root/.kube/ressources/gateway/kong/kong-current-values.yml
-  when: kong_release_info.status is undefined or kong_release_info.status.status != "deployed"
-  
 - name: Apply all gateway resources from directory
   shell: kubectl apply -f /root/.kube/ressources/gateway/ 
   register: kubectl_apply_result
@@ -53,3 +43,14 @@
   failed_when: 
     - kubectl_apply_result.rc != 0
     - "'no objects passed to apply' not in kubectl_apply_result.stderr"
+
+- name: Install Kong gateway
+  kubernetes.core.helm:
+    name: kong
+    chart_ref: kong/ingress
+    namespace: kong
+    create_namespace: true
+    values_files:
+      - /root/.kube/ressources/gateway/helm/kong-current-values.yml
+  when: kong_release_info.status is undefined or kong_release_info.status.status != "deployed"
+  

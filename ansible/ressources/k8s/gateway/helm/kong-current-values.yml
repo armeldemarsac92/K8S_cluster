@@ -931,36 +931,28 @@ gateway:
         postgresql: "5432"
   priorityClassName: ""
   proxy:
-    annotations: {}
-    enabled: true
     http:
-      containerPort: 8000
       enabled: true
-      parameters: []
       servicePort: 80
-    ingress:
-      annotations: {}
-      enabled: false
-      hostname: null
-      hosts: []
-      ingressClassName: null
-      labels: {}
-      path: /
-      pathType: ImplementationSpecific
-    labels:
-      enable-metrics: "true"
-    loadBalancerClass: ""
-    loadBalancerSourceRanges: []
-    nameOverride: ""
-    stream: []
+      containerPort: 8000
+
     tls:
-      appProtocol: ""
-      containerPort: 8443
       enabled: true
-      parameters:
-      - http2
       servicePort: 443
-    type: LoadBalancer
+      containerPort: 8443
+
+    stream:
+      - containerPort: 9901
+        servicePort: 9901
+        protocol: TCP
+      - containerPort: 9902
+        servicePort: 9902
+        protocol: UDP
+      - containerPort: 9903
+        servicePort: 9903
+        protocol: TCP
+        parameters:
+          - "ssl"
   readinessProbe:
     failureThreshold: 3
     httpGet:

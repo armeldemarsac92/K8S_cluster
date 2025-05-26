@@ -22,3 +22,6 @@
 
     - name: Configure gateway
       include_tasks: ../tasks/configure_k8s_gateway.yml
+
+    - name: Configure dashboard
+      include_tasks: ../tasks/configure_k8s_dashboard.yml

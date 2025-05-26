@@ -1,0 +1,43 @@
+- name: Check node labels
+  kubernetes.core.k8s_info:
+    api_version: v1
+    kind: Node
+    name: apigatewayserver
+  register: node_info
+
+- name: Add dashboard helm repo
+  kubernetes.core.helm_repository:
+    name: kubernetes-dashboard
+    repo_url: https://kubernetes.github.io/dashboard/
+
+- name: Copy dashboard configuration files
+  ansible.builtin.copy:
+    src: "../ressources/k8s/dashboard/"
+    dest: "/root/.kube/ressources/dashboard/"
+    mode: '0644'
+    backup: yes
+
+- name: Check if dashboard release exists
+  kubernetes.core.helm_info:
+    name: kubernetes-dashboard
+    namespace: kubernetes-dashboard
+  register: dashboard_release_info
+  ignore_errors: true
+
+- name: Install dashboard
+  kubernetes.core.helm:
+    name: kubernetes-dashboard
+    chart_ref: kubernetes-dashboard/kubernetes-dashboard
+    namespace: kubernetes-dashboard
+    create_namespace: true
+    values_files:
+      - /root/.kube/ressources/dashboard/helm/dashboard-current-values.yaml
+  when: dashboard_release_info.status is undefined or dashboard_release_info.status.status != "deployed"
+  
+- name: Apply all dashboard resources from directory
+  shell: kubectl apply -f /root/.kube/ressources/dashboard/ 
+  register: kubectl_apply_result
+  changed_when: "'configured' in kubectl_apply_result.stdout or 'created' in kubectl_apply_result.stdout"
+  failed_when: 
+    - kubectl_apply_result.rc != 0
+    - "'no objects passed to apply' not in kubectl_apply_result.stderr"
