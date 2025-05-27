@@ -153,6 +153,10 @@ Vagrant.configure("2") do |config|
 
     end
 
+    dhcp_server.vm.provision "shell", inline: <<-SHELL
+      pyenv global 3.12.1
+    SHELL
+
     database_server.vm.provision "ansible" do |ansible|
         
       ansible.extra_vars = {
