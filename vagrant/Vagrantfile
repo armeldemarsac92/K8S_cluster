@@ -97,6 +97,8 @@ Vagrant.configure("2") do |config|
     frontend_server.ssh.host = "localhost"
 
     frontend_server.ssh.port = 3500
+    
+    frontend_server.vm.disk :disk, name: "containerd-storage", size: "20GB"
 
     frontend_server.vm.provider "virtualbox" do |vb|
 
@@ -140,6 +142,8 @@ Vagrant.configure("2") do |config|
 
     database_server.ssh.port = 3501
 
+    database_server.vm.disk :disk, name: "containerd-storage", size: "20GB"
+
     database_server.vm.provider "virtualbox" do |vb|
 
       vb.gui = false
@@ -182,6 +186,8 @@ Vagrant.configure("2") do |config|
     backend_server.ssh.host = "localhost"
 
     backend_server.ssh.port = 3502
+
+    backend_server.vm.disk :disk, name: "containerd-storage", size: "20GB"
 
     backend_server.vm.provider "virtualbox" do |vb|
 

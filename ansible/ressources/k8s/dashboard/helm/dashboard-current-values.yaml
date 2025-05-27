@@ -42,22 +42,10 @@ app:
     pullPolicy: IfNotPresent
     pullSecrets: []
   ingress:
-    annotations: {}
-    enabled: false
-    hosts:
-    - localhost
-    ingressClassName: internal-nginx
-    issuer:
-      name: selfsigned
-      scope: default
-    labels: {}
-    path: /
-    pathType: ImplementationSpecific
-    tls:
-      enabled: true
-      secretName: ""
-    useDefaultAnnotations: true
-    useDefaultIngressClass: false
+    enabled: true 
+    ingressClassName: kong
+    path: "/dashboard"
+    pathType: Prefix
   labels: {}
   mode: dashboard
   priorityClassName: null
@@ -311,7 +299,7 @@ kong:
     admin_gui_error_log: /dev/stderr
     database: "off"
     dns_order: LAST,A,CNAME,AAAA,SRV
-    nginx_worker_processes: 1
+    nginx_worker_processes: 0
     plugins: "off"
     portal_api_access_log: /dev/stdout
     portal_api_error_log: /dev/stderr
