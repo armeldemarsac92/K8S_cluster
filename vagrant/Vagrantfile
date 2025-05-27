@@ -205,7 +205,7 @@ Vagrant.configure("2") do |config|
         ansible_password: 'admin'
         }
 
-      ansible.playbook = "../ansible/playbooks/database_server_setup.yml"
+      ansible.playbook = "../ansible/playbooks/backend_server_setup.yml"
     
     end
 
