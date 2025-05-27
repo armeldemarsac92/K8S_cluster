@@ -24,23 +24,18 @@
   shell: yum install -y containerd
   when: containerd_installed.rc != 0
 
-- name: Check if containerd config exists
-  stat:
-    path: /etc/containerd/config.toml
-  register: containerd_config_exists
-
 - name: Create containerd config directory
   file:
     path: /etc/containerd
     state: directory
     mode: '0755'
-  when: not containerd_config_exists.stat.exists
 
-- name: Set containerd default config with SystemdCgroup settings
-  shell: |
-    containerd config default | \
-    sed 's/SystemdCgroup = false/SystemdCgroup = true/g' > /etc/containerd/config.toml
-  when: not containerd_config_exists.stat.exists
+- name: Copy config.toml to guest
+  ansible.builtin.copy:
+    src: "../ressources/containerd/"
+    dest: "/etc/containerd/"
+    mode: '0644'
+    backup: yes
   register: containerd_config
 
 - name: Check if containerd is running
@@ -53,7 +48,7 @@
   systemd:
     name: containerd
     state: restarted
-  when: containerd_config is defined and containerd_config.changed
+  when: containerd_config is defined
 
 - name: Configure modules to load at boot
   copy:
