@@ -669,7 +669,8 @@ web:
   annotations: {}
   automountServiceAccountToken: true
   containers:
-    args: []
+    args:
+    - --base-href=/dashboard/
     env: []
     ports:
     - containerPort: 8000

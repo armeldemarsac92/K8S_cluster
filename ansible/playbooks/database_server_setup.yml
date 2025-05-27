@@ -8,8 +8,8 @@
     containerd_original: "/var/lib/containerd"
 
   tasks:
-    - name: Remove docker install
-      include_tasks: ../tasks/remove_docker.yml
+#    - name: Remove docker install
+#      include_tasks: ../tasks/remove_docker.yml
        
     - name: Install CENTOS utils
       include_tasks: ../tasks/install_CENTOS_utils.yml

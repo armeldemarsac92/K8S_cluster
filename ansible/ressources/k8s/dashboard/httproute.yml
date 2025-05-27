@@ -6,13 +6,20 @@ metadata:
 spec:
   parentRefs:
   - name: kong
+    namespace: default
     sectionName: proxy
   rules:
   - matches:
     - path:
-        type: PathPrefix
+	type: PathPrefix
         value: /dashboard
+    filters:
+    - type: URLRewrite
+      urlRewrite:
+        path:
+          type: ReplacePrefixMatch
+          replacePrefixMatch: /
     backendRefs:
     - name: kubernetes-dashboard-web
-      namespace: kubernetes-dashboard 
+      namespace: kubernetes-dashboard
       port: 8000
