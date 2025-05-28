@@ -1,0 +1,24 @@
+- hosts: all
+  become: yes
+  
+  vars:
+    ansible_python_interpreter: /root/.pyenv/shims/python
+
+  vars_files:
+    - ../vars/database_vars.yml
+
+  tasks:
+    - name: Install CENTOS utils
+      include_tasks: ../tasks/install_CENTOS_utils.yml
+
+    - name: Backup Docker database
+      include_tasks: ../tasks/backup_docker_db.yml
+
+    - name: Install native database
+      include_tasks: ../tasks/install_native_db.yml
+
+    - name: Restore database
+      include_tasks: ../tasks/restore_db.yml
+
+    - name: Verify migration
+      include_tasks: ../tasks/verify_migration.yml
