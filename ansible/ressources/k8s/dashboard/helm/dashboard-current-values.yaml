@@ -537,20 +537,20 @@ kong:
   priorityClassName: ""
   proxy:
     annotations: {}
-    enabled: false
+    enabled: true
     http:
       containerPort: 8000
-      enabled: false
+      enabled: true
       parameters: []
       servicePort: 80
     ingress:
       annotations: {}
-      enabled: false
+      enabled: true
       hostname: null
       hosts: []
-      ingressClassName: null
+      ingressClassName: kong
       labels: {}
-      path: /
+      path: /dashboard
       pathType: ImplementationSpecific
     labels:
       enable-metrics: "true"
@@ -669,8 +669,7 @@ web:
   annotations: {}
   automountServiceAccountToken: true
   containers:
-    args:
-    - --base-href=/dashboard/
+    args: []
     env: []
     ports:
     - containerPort: 8000
