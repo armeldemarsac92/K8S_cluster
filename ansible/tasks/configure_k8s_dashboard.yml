@@ -31,7 +31,7 @@
     namespace: kubernetes-dashboard
     create_namespace: true
     values_files:
-      - /root/.kube/ressources/dashboard/helm/dashboard-current-values.yaml
+      - /root/.kube/ressources/dashboard/helm/dashboard-default-values.yml
   when: dashboard_release_info.status is undefined or dashboard_release_info.status.status != "deployed"
   
 - name: Apply all dashboard resources from directory
