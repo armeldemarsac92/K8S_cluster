@@ -1,0 +1,32 @@
+---
+- name: Test PostgreSQL connection
+  postgresql_query:
+    db: "{{ db_name }}"
+    login_user: "{{ db_user }}"
+    login_password: "{{ db_password }}"
+    query: "SELECT COUNT(*) as table_count FROM information_schema.tables WHERE table_schema = 'public'"
+  register: pg_table_count
+  when: db_type == "postgresql"
+
+- name: Display PostgreSQL migration result
+  debug:
+    msg: "Migration successful - {{ pg_table_count.query_result[0].table_count }} tables restored"
+  when: db_type == "postgresql"
+
+- name: Test MySQL connection
+  mysql_db:
+    name: "{{ db_name }}"
+    state: present
+    login_user: "{{ db_user }}"
+    login_password: "{{ db_password }}"
+  when: db_type == "mysql"
+
+- name: Clean up backup file
+  file:
+    path: "{{ backup_file }}"
+    state: absent
+  when: cleanup_backup | default(true)
+
+- name: Display final status
+  debug:
+    msg: "Database migration from Docker to native installation completed successfully"

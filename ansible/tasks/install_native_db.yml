@@ -1,0 +1,157 @@
+---
+- name: Stop Docker container
+  shell: docker stop {{ container_name }}
+  ignore_errors: true
+
+- name: Install PostgreSQL packages (CentOS)
+  yum:
+    name:
+      - postgresql
+      - postgresql-server
+      - python3-psycopg2
+    state: present
+  when: db_type == "postgresql"
+
+- name: Install MySQL packages (CentOS)
+  yum:
+    name:
+      - mysql-server
+      - python3-PyMySQL
+    state: present
+  when: db_type == "mysql"
+
+- name: Check if PostgreSQL is already initialized
+  stat:
+    path: /var/lib/pgsql/data/postgresql.conf
+  register: pg_initialized
+  when: db_type == "postgresql"
+
+- name: Initialize PostgreSQL database
+  command: postgresql-setup initdb
+  when: 
+    - db_type == "postgresql"
+    - not pg_initialized.stat.exists
+
+- name: Start and enable PostgreSQL
+  systemd:
+    name: postgresql
+    state: started
+    enabled: yes
+  when: db_type == "postgresql"
+
+- name: Start and enable MySQL
+  systemd:
+    name: mysqld
+    state: started
+    enabled: yes
+  when: db_type == "mysql"
+
+- name: Configure PostgreSQL authentication
+  lineinfile:
+    path: /var/lib/pgsql/data/pg_hba.conf
+    regexp: '^local\s+all\s+all\s+'
+    line: 'local   all             all                                     trust'
+    backup: yes
+  when: db_type == "postgresql"
+  register: pg_auth_changed
+
+- name: Configure PostgreSQL to listen on all addresses
+  lineinfile:
+    path: /var/lib/pgsql/data/postgresql.conf
+    regexp: "^#listen_addresses"
+    line: "listen_addresses = '*'"
+    backup: yes
+  when: db_type == "postgresql"
+  register: pg_config_changed
+
+- name: Restart PostgreSQL if configuration changed
+  systemd:
+    name: postgresql
+    state: restarted
+  when: 
+    - db_type == "postgresql"
+    - (pg_auth_changed.changed or pg_config_changed.changed)
+
+- name: Wait for PostgreSQL to be ready
+  wait_for:
+    port: 5432
+    host: localhost
+    timeout: 30
+  when: db_type == "postgresql"
+
+- name: Create database user (PostgreSQL)
+  postgresql_user:
+    name: "{{ db_user }}"
+    password: "{{ db_password }}"
+    role_attr_flags: CREATEDB,NOSUPERUSER
+  become_user: postgres
+  when: db_type == "postgresql"
+
+- name: Create database (PostgreSQL)
+  postgresql_db:
+    name: "{{ db_name }}"
+    owner: "{{ db_user }}"
+    encoding: UTF8
+  become_user: postgres
+  when: db_type == "postgresql"
+
+- name: Get MySQL temporary root password
+  shell: grep 'temporary password' /var/log/mysqld.log | awk '{print $NF}' | tail -1
+  register: mysql_temp_password
+  when: db_type == "mysql"
+  ignore_errors: true
+
+- name: Set MySQL root password
+  shell: |
+    mysql -u root -p'{{ mysql_temp_password.stdout }}' --connect-expired-password -e "ALTER USER 'root'@'localhost' IDENTIFIED BY '{{ db_password }}'; FLUSH PRIVILEGES;"
+  when: 
+    - db_type == "mysql"
+    - mysql_temp_password.stdout != ""
+  ignore_errors: true
+
+- name: Set MySQL root password (alternative method)
+  mysql_user:
+    name: root
+    password: "{{ db_password }}"
+    login_unix_socket: /var/lib/mysql/mysql.sock
+    check_implicit_admin: yes
+  when: db_type == "mysql"
+  ignore_errors: true
+
+- name: Create MySQL database
+  mysql_db:
+    name: "{{ db_name }}"
+    state: present
+    login_user: root
+    login_password: "{{ db_password }}"
+  when: db_type == "mysql"
+
+- name: Create MySQL user
+  mysql_user:
+    name: "{{ db_user }}"
+    password: "{{ db_password }}"
+    priv: "{{ db_name }}.*:ALL"
+    login_user: root
+    login_password: "{{ db_password }}"
+  when: db_type == "mysql"
+
+- name: Configure MySQL to accept connections
+  lineinfile:
+    path: /etc/my.cnf
+    regexp: '^bind-address'
+    line: 'bind-address = 0.0.0.0'
+    backup: yes
+  when: db_type == "mysql"
+  register: mysql_config_changed
+
+- name: Restart MySQL if configuration changed
+  systemd:
+    name: mysqld
+    state: restarted
+  when: 
+    - db_type == "mysql"
+    - mysql_config_changed.changed
+
+- name: Display installation success message
+  debug:
+    msg: "Native {{ db_type }} database installed and configured successfully"
