@@ -1,0 +1,25 @@
+- name: Add gitea Helm repository
+  shell: |
+    helm repo add gitea-charts https://dl.gitea.com/charts/
+    helm repo update
+
+- name: Check if Gitea is already installed
+  shell: helm list -n gitea --output json
+  environment:
+    KUBECONFIG: /etc/kubernetes/admin.conf
+  register: gitea_installed
+  changed_when: false
+  failed_when: false
+
+- name: Wait for Gitea to be ready
+  shell: kubectl wait --for=condition=ready pod -l app.kubernetes.io/name=gitea -n gitea --timeout=300s
+  environment:
+    KUBECONFIG: /etc/kubernetes/admin.conf
+  when: "'gitea' not in gitea_installed.stdout"
+
+- name: Get Gitea service information
+  shell: kubectl get svc -n gitea -o wide
+  environment:
+    KUBECONFIG: /etc/kubernetes/admin.conf
+  register: gitea_service_info
+  changed_when: false

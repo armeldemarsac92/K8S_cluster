@@ -1,0 +1,124 @@
+---
+# Complete removal of Docker and containerd
+- name: Stop all Docker-related services
+  systemd:
+    name: "{{ item }}"
+    state: stopped
+    enabled: no
+  loop:
+    - docker
+    - docker.socket
+    - containerd
+  ignore_errors: yes
+
+- name: Kill any remaining Docker/containerd processes
+  shell: |
+    pkill -f docker || true
+    pkill -f containerd || true
+    pkill -f dockerd || true
+    pkill -f docker-proxy || true
+  ignore_errors: yes
+
+- name: Remove Docker and containerd packages (CentOS/RHEL)
+  yum:
+    name:
+      - docker
+      - docker-ce
+      - docker-ce-cli
+      - docker-client
+      - docker-client-latest
+      - docker-common
+      - docker-latest
+      - docker-latest-logrotate
+      - docker-logrotate
+      - docker-engine
+      - docker-selinux
+      - docker-engine-selinux
+      - containerd
+      - containerd.io
+      - runc
+    state: absent
+  ignore_errors: yes
+
+- name: Unmount any Docker/containerd filesystems
+  shell: |
+    # Unmount any Docker overlay mounts
+    mount | grep docker | awk '{print $3}' | xargs -r umount -f || true
+    # Unmount containerd mounts
+    mount | grep containerd | awk '{print $3}' | xargs -r umount -f || true
+    # Unmount any overlay2 mounts
+    mount | grep overlay | awk '{print $3}' | xargs -r umount -f || true
+  ignore_errors: yes
+
+- name: Remove Docker and containerd directories
+  file:
+    path: "{{ item }}"
+    state: absent
+  loop:
+    - /var/lib/docker
+    - /var/lib/containerd
+    - /var/lib/containerd-storage
+    - /etc/docker
+    - /etc/containerd
+    - /run/docker
+    - /run/containerd
+    - /var/run/docker
+    - /var/run/containerd
+    - /opt/containerd
+    - /usr/local/bin/docker-compose
+    - /usr/bin/docker-compose
+  ignore_errors: yes
+
+- name: Remove Docker users and groups
+  group:
+    name: docker
+    state: absent
+  ignore_errors: yes
+
+- name: Remove Docker systemd files
+  file:
+    path: "{{ item }}"
+    state: absent
+  loop:
+    - /lib/systemd/system/docker.service
+    - /lib/systemd/system/docker.socket
+    - /lib/systemd/system/containerd.service
+    - /usr/lib/systemd/system/docker.service
+    - /usr/lib/systemd/system/docker.socket
+    - /usr/lib/systemd/system/containerd.service
+    - /etc/systemd/system/docker.service
+    - /etc/systemd/system/docker.socket
+    - /etc/systemd/system/containerd.service
+  ignore_errors: yes
+
+- name: Remove Docker binaries
+  file:
+    path: "{{ item }}"
+    state: absent
+  loop:
+    - /usr/bin/docker
+    - /usr/bin/dockerd
+    - /usr/bin/docker-init
+    - /usr/bin/docker-proxy
+    - /usr/bin/containerd
+    - /usr/bin/containerd-shim
+    - /usr/bin/containerd-shim-runc-v1
+    - /usr/bin/containerd-shim-runc-v2
+    - /usr/bin/runc
+    - /usr/bin/ctr
+    - /usr/local/bin/docker
+    - /usr/local/bin/dockerd
+    - /usr/local/bin/containerd
+    - /usr/local/bin/runc
+    - /usr/local/bin/ctr
+  ignore_errors: yes
+
+- name: Remove any remaining Docker/containerd configuration
+  shell: |
+    # Remove any remaining config files
+    find /etc -name "*docker*" -type f -delete 2>/dev/null || true
+    find /etc -name "*containerd*" -type f -delete 2>/dev/null || true
+    # Remove any Docker/containerd logs
+    find /var/log -name "*docker*" -type f -delete 2>/dev/null || true
+    find /var/log -name "*containerd*" -type f -delete 2>/dev/null || true
+  ignore_errors: yes
