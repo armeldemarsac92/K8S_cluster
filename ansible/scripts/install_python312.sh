@@ -4,6 +4,12 @@ set -e
 # Define Python version upfront
 PY_V=3.12.1
 
+# Update the ca-certificates package
+sudo yum update ca-certificates
+
+# Refresh the certificate bundle
+sudo update-ca-trust extract  
+
 # Check if Python is already installed through pyenv
 if [ -f "$HOME/.pyenv/shims/python" ] && [ "$($HOME/.pyenv/shims/python --version 2>&1)" == "Python $PY_V" ]; then
   echo "Python $PY_V is already installed via pyenv. Skipping installation."

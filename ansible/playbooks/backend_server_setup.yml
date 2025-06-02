@@ -2,8 +2,23 @@
   become: yes
   
   vars:
-    ansible_python_interpreter: /root/.pyenv/shims/python
+    ansible_python_interpreter: /root/.pyenv/shims/python3.12
+    containerd_device: "/dev/sdb"
+    containerd_mount_point: "/var/lib/containerd-storage"
+    containerd_original: "/var/lib/containerd"
 
   tasks:
-    - name : Install CENTOS utils
+    - name: Remove docker install
+      include_tasks: ../tasks/remove_docker.yml
+       
+    - name: Install CENTOS utils
       include_tasks: ../tasks/install_CENTOS_utils.yml
+
+    - name: Configure containerd
+      include_tasks: ../tasks/configure_containerd.yml
+
+    - name: Install Kubernetes
+      include_tasks: ../tasks/install_k8s_centos.yml
+
+    - name: Join cluster
+      include_tasks: ../tasks/join_cluster.yml

@@ -1,0 +1,86 @@
+- name: Stop containerd service
+  systemd:
+    name: containerd
+    state: stopped
+  ignore_errors: yes
+
+- name: Check if device exists
+  stat:
+    path: "{{ containerd_device }}"
+  register: device_check
+  failed_when: not device_check.stat.exists
+
+- name: Create XFS filesystem with ftype=1 (d_type support)
+  filesystem:
+    fstype: xfs
+    dev: "{{ containerd_device }}"
+    opts: "-n ftype=1"
+    force: yes
+  register: filesystem_result
+
+- name: Create containerd mount point directory
+  file:
+    path: "{{ containerd_mount_point }}"
+    state: directory
+    mode: '0755'
+    owner: root
+    group: root
+
+- name: Mount the new XFS filesystem
+  mount:
+    path: "{{ containerd_mount_point }}"
+    src: "{{ containerd_device }}"
+    fstype: xfs
+    opts: defaults
+    state: mounted
+
+- name: Add mount entry to fstab
+  mount:
+    path: "{{ containerd_mount_point }}"
+    src: "{{ containerd_device }}"
+    fstype: xfs
+    opts: defaults
+    dump: 0
+    passno: 2
+    state: present
+
+- name: Check if original containerd directory is mounted
+  shell: mount | grep "{{ containerd_original }}"
+  register: containerd_mount_check
+  failed_when: false
+  changed_when: false
+
+- name: Unmount incorrect containerd mount if exists
+  mount:
+    path: "{{ containerd_original }}"
+    state: unmounted
+  when: containerd_mount_check.rc == 0
+  ignore_errors: yes
+
+- name: Backup existing containerd directory
+  command: mv "{{ containerd_original }}" "{{ containerd_original }}-backup"
+  args:
+    creates: "{{ containerd_original }}-backup"
+  ignore_errors: yes
+
+- name: Create symbolic link from old containerd path to new location
+  file:
+    src: "{{ containerd_mount_point }}"
+    dest: "{{ containerd_original }}"
+    state: link
+    force: yes
+
+- name: Verify XFS filesystem has ftype=1
+  shell: xfs_info "{{ containerd_mount_point }}" | grep ftype
+  register: ftype_check
+  failed_when: "'ftype=1' not in ftype_check.stdout"
+  changed_when: false
+
+- name: Display filesystem information
+  debug:
+    msg: 
+      - "XFS filesystem created successfully"
+      - "Device: {{ containerd_device }}"
+      - "Mount point: {{ containerd_mount_point }}"
+      - "ftype support: {{ ftype_check.stdout }}"
+

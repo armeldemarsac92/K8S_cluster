@@ -29,6 +29,9 @@ Vagrant.configure("2") do |config|
     #for control_server
     dhcp_server.vm.network "forwarded_port", guest: 3503, host: 3503
 
+    #for k8s api_gateway_server
+    dhcp_server.vm.network "forwarded_port", guest: 3504, host: 3504
+
     #open port 3600 for http redirection through gateway
     dhcp_server.vm.network "forwarded_port", guest: 3600, host: 3600
 
@@ -77,6 +80,7 @@ Vagrant.configure("2") do |config|
   config.vm.define "frontend_server" do |frontend_server|
 
     frontend_server.vm.box = "frontend_server"
+    frontend_server.vm.box_url = "./boxes/machine_1.box"
 
     frontend_server.ssh.pty = true
     frontend_server.ssh.insert_key = false 
@@ -93,6 +97,8 @@ Vagrant.configure("2") do |config|
     frontend_server.ssh.host = "localhost"
 
     frontend_server.ssh.port = 3500
+    
+    frontend_server.vm.disk :disk, name: "containerd-storage", size: "20GB"
 
     frontend_server.vm.provider "virtualbox" do |vb|
 
@@ -103,8 +109,6 @@ Vagrant.configure("2") do |config|
 
     end
 
-    frontend_server.vm.provision "shell", path: "../ansible/scripts/install_python312.sh"
-    
     frontend_server.vm.provision "ansible" do |ansible|
         
       ansible.extra_vars = {
@@ -138,6 +142,8 @@ Vagrant.configure("2") do |config|
 
     database_server.ssh.port = 3501
 
+    database_server.vm.disk :disk, name: "containerd-storage", size: "20GB"
+
     database_server.vm.provider "virtualbox" do |vb|
 
       vb.gui = false
@@ -147,8 +153,10 @@ Vagrant.configure("2") do |config|
 
     end
 
-    database_server.vm.provision "shell", path: "../ansible/scripts/install_python312.sh"
-        
+    database_server.vm.provision "shell", inline: <<-SHELL
+      pyenv global 3.12.1
+    SHELL
+
     database_server.vm.provision "ansible" do |ansible|
         
       ansible.extra_vars = {
@@ -183,6 +191,8 @@ Vagrant.configure("2") do |config|
 
     backend_server.ssh.port = 3502
 
+    backend_server.vm.disk :disk, name: "containerd-storage", size: "20GB"
+
     backend_server.vm.provider "virtualbox" do |vb|
 
       vb.gui = false
@@ -192,8 +202,6 @@ Vagrant.configure("2") do |config|
 
     end
 
-    backend_server.vm.provision "shell", path: "../ansible/scripts/install_python312.sh"
-            
     backend_server.vm.provision "ansible" do |ansible|
         
       ansible.extra_vars = {
@@ -201,7 +209,41 @@ Vagrant.configure("2") do |config|
         ansible_password: 'admin'
         }
 
-      ansible.playbook = "../ansible/playbooks/database_server_setup.yml"
+      ansible.playbook = "../ansible/playbooks/backend_server_setup.yml"
+    
+    end
+
+  end
+
+  config.vm.define "api_gateway_server" do |api_gateway_server|
+
+    config.vm.box = "alvistack/ubuntu-20.04"
+    
+    api_gateway_server.vm.synced_folder ".", "/vagrant", disabled: true
+    api_gateway_server.vm.hostname = "apigatewayserver"
+
+    api_gateway_server.vm.network "private_network", mac: "080027123462", type: "dhcp", adapter: "1", auto_config: false, virtualbox__intnet: "appnetwork"
+
+    api_gateway_server.ssh.host = "localhost"
+
+    api_gateway_server.ssh.port = 3504
+
+    api_gateway_server.vm.provider "virtualbox" do |vb|
+
+      vb.gui = false
+      vb.name = "api_gateway_server"
+      vb.memory = 2048
+      vb.cpus = 2
+
+    end
+
+    api_gateway_server.vm.provision "shell", inline: <<-SHELL
+    apt install python3
+    SHELL
+            
+    api_gateway_server.vm.provision "ansible" do |ansible|
+
+      ansible.playbook = "../ansible/playbooks/api_gateway_server_setup.yml"
     
     end
 
@@ -220,6 +262,8 @@ Vagrant.configure("2") do |config|
 
     control_server.vm.hostname = "controlserver"
 
+    control_server.vm.disk :disk, name: "containerd-storage", size: "20GB"
+
     control_server.vm.network "private_network", mac: "080027123461", type: "dhcp", adapter: "1", auto_config: false, virtualbox__intnet: "appnetwork"
 
     control_server.ssh.host = "localhost"
@@ -232,11 +276,8 @@ Vagrant.configure("2") do |config|
       vb.name = "control_server"
       vb.memory = 2048
       vb.cpus = 2
-
     end
 
-    control_server.vm.provision "shell", path: "../ansible/scripts/install_python312.sh"
-            
     control_server.vm.provision "ansible" do |ansible|
         
       ansible.extra_vars = {
@@ -244,7 +285,7 @@ Vagrant.configure("2") do |config|
         ansible_password: 'admin'
         }
 
-      ansible.playbook = "../ansible/playbooks/database_server_setup.yml"
+      ansible.playbook = "../ansible/playbooks/control_server_setup.yml"
     
     end
 

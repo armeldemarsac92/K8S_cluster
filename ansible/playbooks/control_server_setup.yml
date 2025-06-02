@@ -1,7 +1,27 @@
-- name: Secure Portainer with NGINX + Basic Auth + Fail2Ban
-  hosts: portainer_vm
+- hosts: all
   become: yes
-  vars_files:
-    - roles/portainer-secure/vars/vault.yml
-  roles:
-    - portainer-secure
+  
+  vars:
+    ansible_python_interpreter: /usr/bin/python3.12
+    containerd_device: "/dev/sdb"
+    containerd_mount_point: "/var/lib/containerd-storage"
+    containerd_original: "/var/lib/containerd"
+
+  tasks:
+    - name : Install CENTOS utils
+      include_tasks: ../tasks/install_CENTOS_utils.yml
+
+    - name: Install Kubernetes
+      include_tasks: ../tasks/install_k8s_centos.yml
+
+    - name: Setup cluster
+      include_tasks: ../tasks/setup_cluster.yml
+
+    - name: Install helm
+      include_tasks: ../tasks/install_helm.yml
+
+    - name: Configure gateway
+      include_tasks: ../tasks/configure_k8s_gateway.yml
+
+    - name: Configure dashboard
+      include_tasks: ../tasks/configure_k8s_dashboard.yml

@@ -1,14 +1,13 @@
-- name: Install Curl
-  ansible.builtin.raw: yum install curl -y
-  
-- name: Install iputils
-  ansible.builtin.raw: yum install iputils -y
-    
-- name: Install bindutils
-  ansible.builtin.raw: yum install bind-utils -y
-    
-- name: Install strace
-  ansible.builtin.raw: yum install strace -y
-    
-- name: Install telnet
-  ansible.builtin.raw: yum install telnet -y
+- name: Install utils
+  shell: yum install -y {{ item }}
+  loop:
+    - curl
+    - iputils
+    - bind-utils
+    - strace
+    - telnet
+  register: utils_install
+  changed_when: "'Nothing to do' not in utils_install.stdout"
+
+- name: Install PyKube
+  shell: /root/.pyenv/versions/3.12.1/bin/pip install kubernetes PyYAML

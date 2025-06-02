@@ -1,0 +1,40 @@
+
+- name: Stop Docker services
+  systemd:
+    name: "{{ item }}"
+    state: stopped
+    enabled: no
+  loop:
+    - docker
+    - docker.socket
+    - containerd
+  ignore_errors: yes
+
+- name: Remove Docker packages
+  shell: yum remove -y {{ item }}
+  loop:
+      - docker-ce
+      - docker-ce-cli
+      - containerd.io
+      - docker
+      - docker-client
+      - docker-common
+      - docker-engine
+
+- name: Remove Docker directories
+  file:
+    path: "{{ item }}"
+    state: absent
+  loop:
+    - /var/lib/docker
+    - /etc/docker
+    - /var/lib/containerd
+
+- name: Remove Docker group
+  group:
+    name: docker
+    state: absent
+
+- name: Remove Docker network bridge
+  shell: ip link delete docker0
+  ignore_errors: yes
