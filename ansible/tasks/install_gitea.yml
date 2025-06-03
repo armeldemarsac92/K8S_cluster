@@ -7,26 +7,20 @@
     api_version: v1
     kind: Namespace
     state: present
-  environment:
-    KUBECONFIG: /etc/kubernetes/admin.conf
 
 - name: Add gitea Helm repository
   kubernetes.core.helm_repository:
     name: gitea-charts
     repo_url: https://dl.gitea.com/charts/
-  environment:
-    KUBECONFIG: /etc/kubernetes/admin.conf
 
 - name: Update Helm repositories
   shell: helm repo update
-  environment:
-    KUBECONFIG: /etc/kubernetes/admin.conf
   changed_when: false
 
 - name: Copy Gitea value files
   ansible.builtin.copy:
     src: "../ressources/gitea/helm"
-    dest: "/root/.kube/ressources/gitea/helm"
+    dest: "/root/.kube/ressources/k8s/gitea/helm"
     mode: '0644'
     backup: yes
 
@@ -66,8 +60,6 @@
     values_files:
       - /root/.kube/ressources/gitea/gitea-values.yml
     timeout: 600s
-  environment:
-    KUBECONFIG: /etc/kubernetes/admin.conf
   when: "'gitea' not in gitea_installed.stdout"
   register: gitea_helm_install
 
@@ -77,8 +69,7 @@
     kind: Service
     name: gitea-http
     namespace: gitea
-  environment:
-    KUBECONFIG: /etc/kubernetes/admin.conf
+
   register: gitea_service_info
 
 - name: Display Gitea access information
@@ -91,10 +82,7 @@
       - Service Name: {{ gitea_service_info.resources[0].metadata.name if gitea_service_info.resources else 'gitea-http' }}
       - Port: 3000
       - SSH Port: 22
-      
-      To access Gitea:
-      1. Port forward: kubectl port-forward -n gitea svc/gitea-http 3000:3000
-      2. Access: http://localhost:3000
+
       
       Admin Credentials:
       - Username: gitea_admin
@@ -110,7 +98,5 @@
 - name: Verify Gitea pods are running on backend_server
   shell: |
     kubectl get pods -n gitea -o wide | grep gitea
-  environment:
-    KUBECONFIG: /etc/kubernetes/admin.conf
   register: gitea_pods
   changed_when: false
