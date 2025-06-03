@@ -7,33 +7,18 @@
     containerd_mount_point: "/var/lib/containerd-storage"
     containerd_original: "/var/lib/containerd"
 
-  vars_files:
-    - ../vars/database_vars.yml
+    # Database configuration variables
+    postgres_root_password: "admin123"
+    gitea_db_name: "gitea"
+    gitea_db_user: "gitea"
+    gitea_db_password: "gitea_secure_password_2024"
 
   tasks:
-#    - name: Remove docker install
-#      include_tasks: ../tasks/remove_docker.yml
-       
     - name: Install CENTOS utils
       include_tasks: ../tasks/install_CENTOS_utils.yml
 
-#    - name: Configure containerd
-#      include_tasks: ../tasks/configure_containerd.yml
-#
-#    - name: Install Kubernetes
-#      include_tasks: ../tasks/install_k8s_centos.yml
-#
-#    - name: Join cluster
-#      include_tasks: ../tasks/join_cluster.yml
+    - name: Install and configure MySQL (simplified)
+      include_tasks: ../tasks/install_mysql.yml
 
-#    - name: Backup Docker database
-#      include_tasks: ../tasks/backup_docker_db.yml
-
-    - name: Install native database
-      include_tasks: ../tasks/install_native_db.yml
-
-#    - name: Restore database
-#      include_tasks: ../tasks/restore_db.yml
-
-#    - name: Verify migration
-#      include_tasks: ../tasks/verify_migration.yml
+    - name: Configure MySQL for Gitea (simplified)
+      include_tasks: ../tasks/configure_mysql_gitea.yml

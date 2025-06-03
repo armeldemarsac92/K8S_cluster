@@ -1,0 +1,144 @@
+---
+# Simple Gitea setup without Redis (to avoid valkey conflicts)
+
+- name: Create Gitea resource directories
+  file:
+    path: "{{ item }}"
+    state: directory
+    mode: '0755'
+  loop:
+    - /root/.kube/ressources/gitea
+    - /root/.kube/ressources/gitea/helm
+
+- name: Copy Gitea Helm values (Simple PostgreSQL version)
+  copy:
+    dest: /root/.kube/ressources/gitea/gitea-values.yml
+    mode: '0644'
+    content: |
+      # Gitea Helm Values - Simple PostgreSQL setup
+      global:
+        imageRegistry: ""
+        imagePullSecrets: []
+        storageClass: ""
+
+      # Deploy to backend_server node specifically
+      nodeSelector:
+        kubernetes.io/hostname: backendserver
+
+      # Resource configuration
+      replicaCount: 1
+
+      # Image configuration
+      image:
+        registry: "docker.gitea.com"
+        repository: gitea
+        tag: ""
+        pullPolicy: IfNotPresent
+        rootless: true
+
+      # Security context for rootless image
+      podSecurityContext:
+        fsGroup: 1000
+
+      containerSecurityContext:
+        allowPrivilegeEscalation: false
+        capabilities:
+          drop:
+            - ALL
+        privileged: false
+        readOnlyRootFilesystem: true
+        runAsGroup: 1000
+        runAsNonRoot: true
+        runAsUser: 1000
+
+      # Service configuration
+      service:
+        http:
+          type: ClusterIP
+          port: 3000
+        ssh:
+          type: ClusterIP
+          port: 22
+
+      # Ingress disabled
+      ingress:
+        enabled: false
+
+      # Resource limits
+      resources:
+        limits:
+          cpu: 1000m
+          memory: 1Gi
+        requests:
+          cpu: 500m
+          memory: 512Mi
+
+      # Persistence configuration
+      persistence:
+        enabled: true
+        create: true
+        mount: true
+        size: 10Gi
+        accessModes:
+          - ReadWriteOnce
+
+      # Gitea configuration
+      gitea:
+        admin:
+          username: gitea_admin
+          password: r8sA8CPHD9!bt6d
+          email: "gitea@local.domain"
+          passwordMode: keepUpdated
+
+        config:
+          # Server configuration
+          server:
+            SSH_PORT: 22
+            SSH_LISTEN_PORT: 2222
+            HTTP_PORT: 3000
+            ROOT_URL: "http://gitea.local:3000"
+            DISABLE_SSH: false
+      
+          # Database configuration - Connect to external PostgreSQL
+          database:
+            DB_TYPE: postgres
+            HOST: "192.168.2.12:5432"
+            NAME: gitea
+            USER: gitea
+            PASSWD: gitea_secure_password_2024
+            SSL_MODE: disable
+      
+          # Use file-based cache and sessions (no Redis)
+          cache:
+            ENABLED: false
+      
+          session:
+            PROVIDER: file
+      
+          # Security settings
+          security:
+            INSTALL_LOCK: true
+            SECRET_KEY: "gitea-secret-key-change-in-production"
+            INTERNAL_TOKEN: "gitea-internal-token-change-in-production"
+      
+          # Repository settings
+          repository:
+            ROOT: "/data/git/repositories"
+            DEFAULT_BRANCH: main
+
+      # Disable all external dependencies
+      valkey:
+        enabled: false
+
+      valkey-cluster:
+        enabled: false
+
+      postgresql:
+        enabled: false
+
+      postgresql-ha:
+        enabled: false
+
+      # Disable monitoring
+      metrics:
+        enabled: false

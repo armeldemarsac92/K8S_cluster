@@ -1,0 +1,107 @@
+---
+# Configure PostgreSQL for Gitea
+
+- name: Create Gitea database
+  shell: |
+    sudo -u postgres createdb {{ gitea_db_name }} --encoding=UTF8 --locale=fr_FR.UTF-8 --template=template0
+  register: gitea_db_create
+  changed_when: true
+  ignore_errors: yes
+
+- name: Create Gitea database user
+  shell: |
+    sudo -u postgres psql -c "
+    CREATE USER {{ gitea_db_user }} WITH PASSWORD '{{ gitea_db_password }}';
+    GRANT ALL PRIVILEGES ON DATABASE {{ gitea_db_name }} TO {{ gitea_db_user }};
+    ALTER USER {{ gitea_db_user }} CREATEDB;
+    "
+  register: gitea_user_create
+  changed_when: true
+  ignore_errors: yes
+
+- name: Grant additional privileges to Gitea user
+  shell: |
+    sudo -u postgres psql {{ gitea_db_name }} -c "
+    GRANT ALL ON SCHEMA public TO {{ gitea_db_user }};
+    GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA public TO {{ gitea_db_user }};
+    GRANT ALL PRIVILEGES ON ALL SEQUENCES IN SCHEMA public TO {{ gitea_db_user }};
+    ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON TABLES TO {{ gitea_db_user }};
+    ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON SEQUENCES TO {{ gitea_db_user }};
+    "
+  register: gitea_privileges
+  changed_when: true
+
+- name: Test Gitea database connection
+  shell: |
+    PGPASSWORD='{{ gitea_db_password }}' psql -h localhost -U {{ gitea_db_user }} -d {{ gitea_db_name }} -c "
+    SELECT current_database(), current_user, version();
+    "
+  register: gitea_connection_test
+  changed_when: false
+
+- name: Create database configuration file
+  shell: |
+    cat > /root/gitea-db-config.txt << 'EOF'
+    PostgreSQL Database Configuration for Gitea
+    ===========================================
+    
+    Database Details:
+    - Database Name: {{ gitea_db_name }}
+    - Database User: {{ gitea_db_user }}
+    - Database Password: {{ gitea_db_password }}
+    - Database Host: 192.168.2.12
+    - Database Port: 5432
+    - Encoding: UTF8
+    - Database Type: PostgreSQL
+    
+    Connection String for Gitea:
+    postgres://{{ gitea_db_user }}:{{ gitea_db_password }}@192.168.2.12:5432/{{ gitea_db_name }}?sslmode=disable
+    
+    Admin Access:
+    - Postgres User: postgres
+    - Postgres Password: {{ postgres_root_password }}
+    
+    Connection Commands:
+    - Connect as admin: sudo -u postgres psql
+    - Connect as gitea user: PGPASSWORD='{{ gitea_db_password }}' psql -h localhost -U {{ gitea_db_user }} -d {{ gitea_db_name }}
+    
+    Created: {{ ansible_date_time.iso8601 }}
+    EOF
+    chmod 600 /root/gitea-db-config.txt
+  register: config_file
+  changed_when: true
+
+- name: Verify database and user creation
+  shell: |
+    sudo -u postgres psql -c "
+    SELECT datname FROM pg_database WHERE datname = '{{ gitea_db_name }}';
+    SELECT usename FROM pg_user WHERE usename = '{{ gitea_db_user }}';
+    "
+  register: db_verification
+  changed_when: false
+
+- name: Display database configuration results
+  debug:
+    msg: |
+      PostgreSQL Database Configuration Completed!
+      
+      Connection Test Results:
+      {{ gitea_connection_test.stdout }}
+      
+      Database Verification:
+      {{ db_verification.stdout }}
+      
+      Summary:
+      - Engine: PostgreSQL (from CentOS base repository)
+      - Database: {{ gitea_db_name }} with UTF8 encoding
+      - User: {{ gitea_db_user }} with full database privileges
+      - Host: 192.168.2.12:5432
+      - Config File: /root/gitea-db-config.txt
+      - Status: Ready for Gitea connection
+      
+      Gitea Database Configuration:
+      - DB_TYPE: postgres
+      - HOST: 192.168.2.12:5432
+      - NAME: {{ gitea_db_name }}
+      - USER: {{ gitea_db_user }}
+      - PASSWD: {{ gitea_db_password }}

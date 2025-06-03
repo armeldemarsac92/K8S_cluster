@@ -1,7 +1,53 @@
+---
+# Enhanced Gitea installation task updated for PostgreSQL
+
+- name: Create gitea namespace
+  kubernetes.core.k8s:
+    name: gitea
+    api_version: v1
+    kind: Namespace
+    state: present
+  environment:
+    KUBECONFIG: /etc/kubernetes/admin.conf
+
 - name: Add gitea Helm repository
+  kubernetes.core.helm_repository:
+    name: gitea-charts
+    repo_url: https://dl.gitea.com/charts/
+  environment:
+    KUBECONFIG: /etc/kubernetes/admin.conf
+
+- name: Update Helm repositories
+  shell: helm repo update
+  environment:
+    KUBECONFIG: /etc/kubernetes/admin.conf
+  changed_when: false
+
+- name: Copy Gitea configuration files
+  ansible.builtin.copy:
+    src: "../ressources/gitea/"
+    dest: "/root/.kube/ressources/gitea/"
+    mode: '0644'
+    backup: yes
+
+- name: Verify database connectivity from control server
   shell: |
-    helm repo add gitea-charts https://dl.gitea.com/charts/
-    helm repo update
+    # Test if we can reach the database server
+    nc -z 192.168.2.12 5432 && echo "Database server reachable" || echo "Database server unreachable"
+  register: db_connectivity_check
+  changed_when: false
+  ignore_errors: yes
+
+- name: Display database connectivity status
+  debug:
+    msg: |
+      Database Connectivity Check:
+      {{ db_connectivity_check.stdout }}
+      
+      Note: Gitea will connect to PostgreSQL at 192.168.2.12:5432
+      Database: gitea
+      User: gitea
+      Password: gitea_secure_password_2024
 
 - name: Check if Gitea is already installed
   shell: helm list -n gitea --output json
@@ -11,19 +57,60 @@
   changed_when: false
   failed_when: false
 
-- name: Add gitea Helm repository
-  shell: |
-    helm install gitea gitea-charts/gitea --create-namespace --namespace gitea
-
-- name: Wait for Gitea to be ready
-  shell: kubectl wait --for=condition=ready pod -l app.kubernetes.io/name=gitea -n gitea --timeout=300s
+- name: Install Gitea using Helm
+  kubernetes.core.helm:
+    name: gitea
+    chart_ref: gitea-charts/gitea
+    namespace: gitea
+    create_namespace: true
+    values_files:
+      - /root/.kube/ressources/gitea/gitea-values.yml
+    timeout: 600s
   environment:
     KUBECONFIG: /etc/kubernetes/admin.conf
   when: "'gitea' not in gitea_installed.stdout"
+  register: gitea_helm_install
 
 - name: Get Gitea service information
-  shell: kubectl get svc -n gitea -o wide
+  kubernetes.core.k8s_info:
+    api_version: v1
+    kind: Service
+    name: gitea-http
+    namespace: gitea
   environment:
     KUBECONFIG: /etc/kubernetes/admin.conf
   register: gitea_service_info
+
+- name: Display Gitea access information
+  debug:
+    msg: |
+      Gitea has been successfully deployed!
+      
+      Service Details:
+      - Namespace: gitea
+      - Service Name: {{ gitea_service_info.resources[0].metadata.name if gitea_service_info.resources else 'gitea-http' }}
+      - Port: 3000
+      - SSH Port: 22
+      
+      To access Gitea:
+      1. Port forward: kubectl port-forward -n gitea svc/gitea-http 3000:3000
+      2. Access: http://localhost:3000
+      
+      Admin Credentials:
+      - Username: gitea_admin
+      - Password: r8sA8CPHD9!bt6d
+      - Email: gitea@local.domain
+      
+      Database Connection:
+      - Type: PostgreSQL
+      - Host: 192.168.2.12:5432
+      - Database: gitea
+      - User: gitea
+
+- name: Verify Gitea pods are running on backend_server
+  shell: |
+    kubectl get pods -n gitea -o wide | grep gitea
+  environment:
+    KUBECONFIG: /etc/kubernetes/admin.conf
+  register: gitea_pods
   changed_when: false
