@@ -18,7 +18,7 @@
       include_tasks: ../tasks/install_CENTOS_utils.yml
 
     - name: Install and configure MySQL (simplified)
-      include_tasks: ../tasks/install_mysql.yml
+      include_tasks: ../tasks/install_psql.yml
 
-    - name: Configure MySQL for Gitea (simplified)
-      include_tasks: ../tasks/configure_mysql_gitea.yml
+    - name: Configure PostgreSQL for Gitea (simplified)
+      include_tasks: ../tasks/configure_psql_gitea.yml

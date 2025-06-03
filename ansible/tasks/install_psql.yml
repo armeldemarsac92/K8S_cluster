@@ -98,18 +98,3 @@
     sudo -u postgres psql -c "SELECT version();"
   register: postgres_verification
   changed_when: false
-
-- name: Display PostgreSQL installation status
-  debug:
-    msg: |
-      PostgreSQL Installation Completed!
-      
-      Version: {{ postgres_verification.stdout_lines[2] if postgres_verification.stdout_lines|length > 2 else 'PostgreSQL installed' }}
-      
-      Service: postgresql
-      Port: 5432
-      Postgres Password: {{ postgres_root_password }}
-      Configuration: /var/lib/pgsql/data/postgresql.conf
-      Authentication: /var/lib/pgsql/data/pg_hba.conf
-      Status: {{ 'Ready' if postgres_ready.rc == 0 else 'Failed' }}
-      Firewall: {{ 'Configured' if 'Firewall configured' in firewall_config.stdout else 'Skipped' }}

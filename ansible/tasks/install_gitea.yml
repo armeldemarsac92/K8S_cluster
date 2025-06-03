@@ -19,8 +19,8 @@
 
 - name: Copy Gitea value files
   ansible.builtin.copy:
-    src: "../ressources/gitea/helm"
-    dest: "/root/.kube/ressources/k8s/gitea/helm"
+    src: "../ressources/k8s/gitea/helm"
+    dest: "/root/.kube/ressources/gitea/helm"
     mode: '0644'
     backup: yes
 
@@ -45,8 +45,6 @@
 
 - name: Check if Gitea is already installed
   shell: helm list -n gitea --output json
-  environment:
-    KUBECONFIG: /etc/kubernetes/admin.conf
   register: gitea_installed
   changed_when: false
   failed_when: false
