@@ -1,0 +1,12 @@
+# apiVersion: cert-manager.io/v1
+# kind: Certificate
+# metadata:
+#   name: otter-cert-tls
+# spec:
+#   issuerRef:
+#     name: otterCorp
+#     kind: Issuer
+#     group: cert-manager.io
+#   dnsNames:
+#     - otter.river.local
+#   secretName: otter-cert-tls

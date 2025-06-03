@@ -1,5 +1,23 @@
+# apiVersion: gateway.networking.k8s.io/v1
+# kind: Gateway
+# metadata:
+#   name: kong
+# spec:
+#   gatewayClassName: kong
+#   listeners:
+#   - name: proxy
+#     port: 8899
+#     protocol: TLS
+#     hostname: otter.river.local
+#     tls:
+#       mode: Passthrough
+#       certificateRefs:
+#         - name: otter-cert-tls
+#     allowedRoutes:
+#       namespaces:
+#         from: All
 
-apiVersion: gateway.networking.k8s.io/v1
+apiVersion: gateway.networking.k8s.io/v1alpha2
 kind: Gateway
 metadata:
   name: kong
@@ -7,8 +25,11 @@ spec:
   gatewayClassName: kong
   listeners:
   - name: proxy
-    port: 80
-    protocol: HTTP
+    port: 8899
+    protocol: TLS
+    hostname: kubewall.local
+    tls:
+      mode: Passthrough
     allowedRoutes:
       namespaces:
         from: All
