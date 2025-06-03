@@ -182,12 +182,16 @@ controller:
   extraLabels: {}
   extraObjects: []
   extraSecrets: []
+  gatewayAPI:
+    enabled: true
   global: {}
   image:
     effectiveSemver: null
     pullPolicy: IfNotPresent
     repository: kong
     tag: "3.9"
+  ingress:
+    enabled: true
   ingressController:
     adminApi:
       tls:
@@ -216,7 +220,6 @@ controller:
     args: []
     enabled: true
     env:
-      feature_gates: "GatewayAlpha=true"
       kong_admin_tls_skip_verify: true
     envFrom: []
     gatewayDiscovery:
@@ -682,7 +685,6 @@ gateway:
     proxy_error_log: /dev/stderr
     role: traditional
     router_flavor: traditional
-    stream_listen: "0.0.0.0:8899 ssl"
   envFrom: []
   extraConfigMaps: []
   extraLabels: {}
@@ -950,9 +952,7 @@ gateway:
     loadBalancerClass: ""
     loadBalancerSourceRanges: []
     nameOverride: ""
-    stream:
-       - containerPort: 8899 # configure the service to forward traffic to the TLS port
-         servicePort: 8899
+    stream: []
     tls:
       appProtocol: ""
       containerPort: 8443
@@ -1003,3 +1003,7 @@ gateway:
   waitImage:
     enabled: true
     pullPolicy: IfNotPresent
+nodeSelector:
+  kubernetes.io/hostname: apigatewayserver
+proxy:
+  enabled: true

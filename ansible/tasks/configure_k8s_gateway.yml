@@ -7,7 +7,7 @@
   ignore_errors: true
 
 - name: Install gateway API resource definitions
-  shell: kubectl apply -f https://github.com/kubernetes-sigs/gateway-api/releases/download/v1.3.0/standard-install.yaml
+  shell: kubectl apply -f https://github.com/kubernetes-sigs/gateway-api/releases/download/v1.3.0/experimental-install.yaml
   when: gateway_crd_exists.resources | length == 0
 
 - name: Check node labels
