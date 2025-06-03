@@ -23,10 +23,10 @@
     KUBECONFIG: /etc/kubernetes/admin.conf
   changed_when: false
 
-- name: Copy Gitea configuration files
+- name: Copy Gitea value files
   ansible.builtin.copy:
-    src: "../ressources/gitea/"
-    dest: "/root/.kube/ressources/gitea/"
+    src: "../ressources/gitea/helm"
+    dest: "/root/.kube/ressources/gitea/helm"
     mode: '0644'
     backup: yes
 
