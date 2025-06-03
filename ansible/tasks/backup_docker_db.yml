@@ -19,7 +19,7 @@
     msg: "Container {{ container_name }} does not exist"
   when: container_name not in docker_containers.stdout_lines
 
-- name: Stop active connections (PostgreSQL)
+- name: Stop active PostgreSQL connections
   shell: |
     docker exec {{ container_name }} psql -U {{ db_user }} -d postgres -c "
     SELECT pg_terminate_backend(pg_stat_activity.pid)
@@ -31,12 +31,26 @@
 
 - name: Backup PostgreSQL database
   shell: |
-    docker exec {{ container_name }} pg_dump -U {{ db_user }} -h localhost {{ db_name }} > {{ backup_file }}
+    docker exec {{ container_name }} pg_dump -U {{ db_user }} -h localhost {{ db_name }}
+  register: pg_backup
+  when: db_type == "postgresql"
+
+- name: Write PostgreSQL backup to host file
+  copy:
+    content: "{{ pg_backup.stdout }}"
+    dest: "{{ backup_file }}"
   when: db_type == "postgresql"
 
 - name: Backup MySQL database
   shell: |
-    docker exec {{ container_name }} mysqldump -u {{ db_user }} -p{{ db_password }} {{ db_name }} > {{ backup_file }}
+    docker exec {{ container_name }} mysqldump -u {{ db_user }} -p{{ db_password }} {{ db_name }}
+  register: mysql_backup
+  when: db_type == "mysql"
+
+- name: Write MySQL backup to host file
+  copy:
+    content: "{{ mysql_backup.stdout }}"
+    dest: "{{ backup_file }}"
   when: db_type == "mysql"
 
 - name: Verify backup file
@@ -47,7 +61,7 @@
 - name: Fail if backup is empty
   fail:
     msg: "Backup seems empty ({{ backup_stat.stat.size }} bytes)"
-  when: backup_stat.stat.size < 100
+  when: backup_stat.stat.size is defined and backup_stat.stat.size < 100
 
 - name: Display backup info
   debug:

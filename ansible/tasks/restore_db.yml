@@ -1,18 +1,10 @@
 ---
 - name: Restore PostgreSQL database
   shell: |
-    sudo -u postgres psql {{ db_name }} < {{ backup_file }}
-  when: db_type == "postgresql"
+    psql {{ db_name }} < {{ backup_file }}
+  become: true
+  become_user: _postgresql
   register: restore_result
-
-- name: Restore MySQL database
-  mysql_db:
-    name: "{{ db_name }}"
-    state: import
-    target: "{{ backup_file }}"
-    login_user: root
-    login_password: "{{ db_password }}"
-  when: db_type == "mysql"
 
 - name: Display restore result
   debug:

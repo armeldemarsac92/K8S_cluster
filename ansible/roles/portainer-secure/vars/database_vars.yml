@@ -1,14 +1,11 @@
-# Configuration base de données
-db_type: postgresql  # ou mysql selon votre setup
+db_type: postgresql
 db_name: app_database
 db_user: app_user
 db_password: secure_password
 container_name: postgres_container
 
-# Chemins
 backup_dir: /tmp/db_migration
 backup_file: "{{ backup_dir }}/migration_{{ ansible_date_time.epoch }}.sql"
 
-# Configuration native DB
 native_db_port: 5432
 native_db_service: postgresql
