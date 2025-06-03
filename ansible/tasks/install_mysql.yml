@@ -74,43 +74,12 @@
   register: firewall_config
   changed_when: "'Firewall configured' in firewall_config.stdout"
 
-- name: Test PostgreSQL configuration
-  shell: |
-    sudo -u postgres /usr/bin/postgres --config-file=/var/lib/pgsql/data/postgresql.conf --check
-  register: postgres_config_test
-  changed_when: false
-  ignore_errors: yes
-
 - name: Restart PostgreSQL to apply configuration
   shell: |
-    if [ "{{ postgres_config_test.rc }}" = "0" ]; then
-      systemctl restart postgresql
-      echo "PostgreSQL restarted successfully"
-    else
-      echo "Configuration test failed, keeping original config"
-      cp /var/lib/pgsql/data/postgresql.conf.backup /var/lib/pgsql/data/postgresql.conf
-      systemctl restart postgresql
-      echo "PostgreSQL restarted with original config"
-    fi
+    systemctl restart postgresql
+    echo "PostgreSQL restarted successfully"
   register: postgres_restart
   changed_when: true
-
-- name: Wait for PostgreSQL to be ready
-  shell: |
-    for i in {1..30}; do
-      if systemctl is-active postgresql >/dev/null 2>&1; then
-        if sudo -u postgres psql -c "SELECT 1" >/dev/null 2>&1; then
-          echo "PostgreSQL is ready"
-          exit 0
-        fi
-      fi
-      sleep 2
-    done
-    echo "PostgreSQL failed to start properly"
-    systemctl status postgresql
-    exit 1
-  register: postgres_ready
-  changed_when: false
 
 - name: Set PostgreSQL postgres user password (only if service is running)
   shell: |

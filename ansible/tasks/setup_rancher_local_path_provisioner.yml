@@ -1,0 +1,91 @@
+---
+- name: Create local storage directories on all nodes
+  file:
+    path: "{{ item }}"
+    state: directory
+    mode: '0755'
+    owner: root
+    group: root
+  loop:
+    - /opt/local-path-provisioner
+    - /var/lib/rancher/local-path-provisioner
+
+- name: Download Rancher Local Path Provisioner manifest
+  get_url:
+    url: https://raw.githubusercontent.com/rancher/local-path-provisioner/v0.0.28/deploy/local-path-storage.yaml
+    dest: /tmp/local-path-storage.yaml
+    mode: '0644'
+  register: manifest_download
+
+- name: Apply Local Path Provisioner manifest
+  shell: kubectl apply -f /tmp/local-path-storage.yaml
+  environment:
+    KUBECONFIG: /etc/kubernetes/admin.conf
+  register: provisioner_install
+  changed_when: "'created' in provisioner_install.stdout or 'configured' in provisioner_install.stdout"
+
+- name: Wait for local-path-provisioner deployment to be ready
+  shell: |
+    kubectl rollout status deployment/local-path-provisioner -n local-path-storage --timeout=300s
+  environment:
+    KUBECONFIG: /etc/kubernetes/admin.conf
+  register: rollout_status
+  changed_when: false
+
+- name: Wait for local-path-provisioner pod to be running
+  shell: |
+    kubectl get pods -n local-path-storage -l app=local-path-provisioner --field-selector=status.phase=Running --no-headers
+  environment:
+    KUBECONFIG: /etc/kubernetes/admin.conf
+  register: provisioner_pods
+  until: provisioner_pods.stdout_lines | length > 0
+  retries: 30
+  delay: 10
+  changed_when: false
+
+- name: Check if default storage class already exists
+  shell: kubectl get storageclass -o jsonpath='{.items[?(@.metadata.annotations.storageclass\.kubernetes\.io/is-default-class=="true")].metadata.name}'
+  environment:
+    KUBECONFIG: /etc/kubernetes/admin.conf
+  register: default_sc_check
+  changed_when: false
+
+- name: Remove default annotation from existing storage classes
+  shell: |
+    for sc in $(kubectl get storageclass -o jsonpath='{.items[?(@.metadata.annotations.storageclass\.kubernetes\.io/is-default-class=="true")].metadata.name}'); do
+      kubectl patch storageclass $sc -p '{"metadata": {"annotations":{"storageclass.kubernetes.io/is-default-class":"false"}}}'
+    done
+  environment:
+    KUBECONFIG: /etc/kubernetes/admin.conf
+  when: default_sc_check.stdout != ""
+  register: remove_default
+  changed_when: remove_default.rc == 0
+
+- name: Set local-path as default storage class
+  shell: |
+    kubectl patch storageclass local-path -p '{"metadata": {"annotations":{"storageclass.kubernetes.io/is-default-class":"true"}}}'
+  environment:
+    KUBECONFIG: /etc/kubernetes/admin.conf
+  register: set_default_sc
+  changed_when: "'patched' in set_default_sc.stdout"
+
+- name: Verify storage classes
+  shell: kubectl get storageclass
+  environment:
+    KUBECONFIG: /etc/kubernetes/admin.conf
+  register: sc_verification
+  changed_when: false
+
+- name: Display Local Path Provisioner status
+  debug:
+    msg: |
+      Rancher Local Path Provisioner Setup Complete!
+      
+      Status:
+      {{ sc_verification.stdout }}
+      
+      Provisioner Pod Status:
+      {{ provisioner_pods.stdout }}
+      
+      The local-path StorageClass is now set as default.
+      Persistent volumes will be created at: /opt/local-path-provisioner on each node.

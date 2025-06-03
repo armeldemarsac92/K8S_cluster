@@ -17,6 +17,8 @@
     - name: Setup cluster
       include_tasks: ../tasks/setup_cluster.yml
 
+    - name: Setup Rancher Local Path Provisioner
+      include_tasks: ../tasks/setup_rancher_local_path_provisioner.yml
     - name: Install helm
       include_tasks: ../tasks/install_helm.yml
 
