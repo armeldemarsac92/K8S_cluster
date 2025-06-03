@@ -27,4 +27,4 @@
       include_tasks: ../tasks/configure_k8s_dashboard.yml
     
     - name: Install gitea
-      include_tasks: ../tasks/install_helm.yml
+      include_tasks: ../tasks/install_gitea.yml

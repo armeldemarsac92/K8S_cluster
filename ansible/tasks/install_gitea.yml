@@ -11,6 +11,10 @@
   changed_when: false
   failed_when: false
 
+- name: Add gitea Helm repository
+  shell: |
+    helm install gitea gitea-charts/gitea --create-namespace --namespace gitea
+
 - name: Wait for Gitea to be ready
   shell: kubectl wait --for=condition=ready pod -l app.kubernetes.io/name=gitea -n gitea --timeout=300s
   environment:

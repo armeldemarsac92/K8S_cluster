@@ -1,0 +1,33 @@
+---
+# Database Configuration Variables
+# Choose either "postgresql" or "mysql" for the database type
+db_type: "postgresql"
+
+# Database connection details
+db_name: "myapp_db"
+db_user: "myapp_user"
+db_password: "SecurePassword123!"
+
+# Docker container name (used in the first task)
+container_name: "my_container"
+
+# Python interpreter path (already defined in your playbook)
+# ansible_python_interpreter: /root/.pyenv/shims/python3.12
+
+# Storage configuration (already defined in your playbook)
+# containerd_device: "/dev/sdb"
+# containerd_mount_point: "/var/lib/containerd-storage"
+# containerd_original: "/var/lib/containerd"
+
+# Additional database configuration (optional)
+# For PostgreSQL
+pg_port: 5432
+pg_listen_addresses: "*"
+
+# For MySQL
+mysql_port: 3306
+mysql_bind_address: "0.0.0.0"
+
+# Security settings
+db_backup_enabled: true
+db_ssl_enabled: false

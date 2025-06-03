@@ -7,6 +7,9 @@
     containerd_mount_point: "/var/lib/containerd-storage"
     containerd_original: "/var/lib/containerd"
 
+  vars_files:
+    - ../vars/database_vars.yml
+
   tasks:
 #    - name: Remove docker install
 #      include_tasks: ../tasks/remove_docker.yml
@@ -22,3 +25,15 @@
 #
 #    - name: Join cluster
 #      include_tasks: ../tasks/join_cluster.yml
+
+#    - name: Backup Docker database
+#      include_tasks: ../tasks/backup_docker_db.yml
+
+    - name: Install native database
+      include_tasks: ../tasks/install_native_db.yml
+
+#    - name: Restore database
+#      include_tasks: ../tasks/restore_db.yml
+
+#    - name: Verify migration
+#      include_tasks: ../tasks/verify_migration.yml
