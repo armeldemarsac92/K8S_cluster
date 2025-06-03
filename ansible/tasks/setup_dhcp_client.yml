@@ -1,13 +1,13 @@
-- name: Check if Google.com is reachable
-  ansible.builtin.wait_for:
-    host: google.com
-    port: 80
-    timeout: 5  
-  ignore_errors: yes
+- name: Check connectivity via specific interface
+  ansible.builtin.raw: |
+    curl --interface em3 -I -s -m 5 http://google.com
   register: connectivity_check
+  ignore_errors: yes
+  changed_when: false
+  delegate_to: "{{ inventory_hostname }}"
   become: no
 
-- name: Run network setup if Google is unreachable
+- name: Run network setup if connectivity check fails
   block:
     - name: Run network setup script
       shell: ../scripts/network_setup.sh
@@ -22,14 +22,12 @@
       debug:
         msg: "Generated IP: {{ network_setup.stdout }}"
 
-    - name: Extract target IP
-      set_fact:
-        target_ip: "{{ network_setup.stdout }}"
-
     - name: Configure network interface
       ansible.builtin.command: ifconfig em3 {{ target_ip }} netmask {{ host_netmask }} up
+      delegate_to: "{{ inventory_hostname }}"
 
     - name: Persist network configuration
       ansible.builtin.command: echo "inet {{ target_ip }} netmask {{ host_netmask }}" > /etc/hostname.em3
-      
-  when: connectivity_check is failed 
+      delegate_to: "{{ inventory_hostname }}"
+  
+  when: connectivity_check.rc != 0
