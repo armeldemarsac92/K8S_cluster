@@ -314,7 +314,8 @@ controller:
     preUpgrade: true
     resources: {}
     ttlSecondsAfterFinished: null
-  nodeSelector: {}
+  nodeSelector: 
+    kubernetes.io/hostname: apigatewayserver
   plugins: {}
   podAnnotations:
     kuma.io/gateway: enabled
@@ -819,7 +820,8 @@ gateway:
     preUpgrade: true
     resources: {}
     ttlSecondsAfterFinished: null
-  nodeSelector: {}
+  nodeSelector:
+    kubernetes.io/hostname: apigatewayserver
   plugins: {}
   podAnnotations:
     kuma.io/gateway: enabled

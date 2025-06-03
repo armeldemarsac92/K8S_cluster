@@ -133,16 +133,10 @@ gitea:
 
 # Enable Redis for caching and sessions
 valkey:
-  enabled: true
-  architecture: standalone
-  global:
-    valkey:
-      password: changeme
-  master:
-    count: 1
-    service:
-      ports:
-        valkey: 6379
+  enabled: false
+
+valkey-cluster:
+  enabled: false
 
 # Disable built-in PostgreSQL since we're using external MySQL database
 postgresql:

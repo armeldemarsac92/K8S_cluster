@@ -8,7 +8,7 @@ spec:
   - name: kong
     kind: Gateway
     namespace: default
-    sectionName: proxy
+    sectionName: gitea-http
   rules:
   - matches:
     - path:
@@ -21,7 +21,7 @@ spec:
           type: ReplacePrefixMatch
           replacePrefixMatch: /
     backendRefs:
-    - name: kubernetes-dashboard-kong-proxy
+    - name: gitea-http
       kind: Service
-      port: 80
-      namespace: kubernetes-dashbo
+      port: 3000
+      namespace: gitea
