@@ -3,30 +3,85 @@
   postgresql_query:
     db: "{{ db_name }}"
     login_user: "{{ db_user }}"
-    login_password: "{{ db_password }}"
-    query: "SELECT COUNT(*) as table_count FROM information_schema.tables WHERE table_schema = 'public'"
-  register: pg_table_count
-  when: db_type == "postgresql"
+    login_password: "{{ db_password | default(omit) }}"
+    login_host: "{{ db_host | default('localhost') }}"
+    login_port: "{{ db_port | default(5432) }}"
+    query: "SELECT version();"
+  register: pg_connection
+  failed_when: false
 
-- name: Display PostgreSQL migration result
-  debug:
-    msg: "Migration successful - {{ pg_table_count.query_result[0].table_count }} tables restored"
-  when: db_type == "postgresql"
+- name: Fail if connection failed
+  fail:
+    msg: "Cannot connect to PostgreSQL database {{ db_name }} as user {{ db_user }}"
+  when: pg_connection is failed
 
-- name: Test MySQL connection
-  mysql_db:
-    name: "{{ db_name }}"
-    state: present
+- name: Gather database statistics
+  postgresql_query:
+    db: "{{ db_name }}"
     login_user: "{{ db_user }}"
-    login_password: "{{ db_password }}"
-  when: db_type == "mysql"
+    login_password: "{{ db_password | default(omit) }}"
+    login_host: "{{ db_host | default('localhost') }}"
+  register: db_stats
+
+- name: Check for critical tables (optional)
+  postgresql_query:
+    db: "{{ db_name }}"
+    login_user: "{{ db_user }}"
+    login_password: "{{ db_password | default(omit) }}"
+    login_host: "{{ db_host | default('localhost') }}"
+    query: |
+      SELECT table_name 
+      FROM information_schema.tables 
+      WHERE table_schema = 'public' 
+      AND table_name = ANY(ARRAY{{ critical_tables | default([]) }}::text[])
+  register: critical_check
+  when: critical_tables is defined
+
+- name: Verify all critical tables exist
+  fail:
+    msg: "Critical tables missing! Found {{ critical_check.rowcount }} of {{ critical_tables | length }} required tables"
+  when: 
+    - critical_tables is defined
+    - critical_check.rowcount != critical_tables | length
+
+- name: Run ANALYZE to update statistics
+  postgresql_query:
+    db: "{{ db_name }}"
+    login_user: "{{ db_user }}"
+    login_password: "{{ db_password | default(omit) }}"
+    login_host: "{{ db_host | default('localhost') }}"
+    query: "ANALYZE;"
+  when: run_analyze | default(true)
+
+- name: Test sample query (optional)
+  postgresql_query:
+    db: "{{ db_name }}"
+    login_user: "{{ db_user }}"
+    login_password: "{{ db_password | default(omit) }}"
+    login_host: "{{ db_host | default('localhost') }}"
+    query: "{{ test_query }}"
+  register: test_result
+  when: test_query is defined
 
 - name: Clean up backup file
   file:
     path: "{{ backup_file }}"
     state: absent
-  when: cleanup_backup | default(true)
+  when: 
+    - backup_file is defined
+    - cleanup_backup | default(true)
 
-- name: Display final status
+- name: Display verification summary
   debug:
-    msg: "Database migration from Docker to native installation completed successfully"
+    msg:
+      - "✅ Database verification completed successfully!"
+      - "PostgreSQL version: {{ pg_connection.query_result[0].version.split()[1] }}"
+      - "Database: {{ db_name }} on {{ db_host | default('localhost') }}:{{ db_port | default(5432) }}"
+      - "Tables: {{ db_stats.query_result[0].tables }}"
+      - "Columns: {{ db_stats.query_result[0].columns }}"
+      - "Indexes: {{ db_stats.query_result[0].indexes }}"
+      - "Sequences: {{ db_stats.query_result[0].sequences }}"
+      - "Functions: {{ db_stats.query_result[0].functions }}"
+      - "Database size: {{ (db_stats.query_result[0].size_bytes | int / 1024 / 1024) | round(2) }} MB"
+      - "{{ 'Critical tables verified ✓' if critical_tables is defined else '' }}"
+      - "{{ 'Test query successful ✓' if test_query is defined else '' }}"
