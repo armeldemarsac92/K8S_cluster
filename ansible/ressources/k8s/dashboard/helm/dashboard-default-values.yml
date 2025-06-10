@@ -1,9 +1,9 @@
 # TLS Configuration
 tls:
   # Name of the Kubernetes secret that contains the TLS certificate and key
-  secretName: ""
+  secretName: "otter-cert-tls"
   # The hostname for TLS (ensure DNS resolution for this hostname)
-  host: kubewall.local
+  host: otterstack.dashboard.local
 
 # Replica settings for the deployment
 replicaCount: 1  # Number of replicas of the application pod
@@ -77,7 +77,8 @@ pvc:
   storageClass: ""  # Storage class for the PVC (leave empty for default)
 
 # Node scheduling preferences
-nodeSelector: {}  # Node labels for pod assignment
+nodeSelector: 
+  kubernetes.io/hostname: frontendserver
 
 # Tolerations for node taints
 tolerations: []

@@ -27,7 +27,7 @@ spec:
   - name: proxy
     port: 8899
     protocol: TLS
-    hostname: kubewall.local
+    hostname: otterstack.dashboard.local
     tls:
       mode: Passthrough
     allowedRoutes:

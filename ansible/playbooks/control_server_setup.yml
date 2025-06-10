@@ -19,8 +19,12 @@
 
     - name: Setup Rancher Local Path Provisioner
       include_tasks: ../tasks/setup_rancher_local_path_provisioner.yml
+
     - name: Install helm
       include_tasks: ../tasks/install_helm.yml
+
+    - name: Configure certmanager
+      include_tasks: ../tasks/install_cert_manager.yml
 
     - name: Configure gateway
       include_tasks: ../tasks/configure_k8s_gateway.yml
