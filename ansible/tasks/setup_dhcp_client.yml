@@ -16,7 +16,7 @@
       delegate_to: localhost
       become: no
       vars:
-        ansible_python_interpreter: /usr/bin/python
+        ansible_python_interpreter: /usr/bin/python3
 
     - name: Show generated IP
       debug:
