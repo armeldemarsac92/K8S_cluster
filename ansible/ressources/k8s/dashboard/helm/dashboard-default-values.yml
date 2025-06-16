@@ -1,7 +1,7 @@
 # TLS Configuration
 tls:
   # Name of the Kubernetes secret that contains the TLS certificate and key
-  secretName: "otter-cert-tls"
+  secretName: "dashboard-cert-secret"
   # The hostname for TLS (ensure DNS resolution for this hostname)
   host: otterstack.dashboard.local
 

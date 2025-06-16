@@ -38,7 +38,7 @@ spec:
     namespace: default
     sectionName: proxy
   hostnames:
-   - kubewall.local
+   - otterstack.dashboard.local
   rules:  # Correct placement for backendRefs
   - backendRefs:
     - name: kubewall

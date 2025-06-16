@@ -24,8 +24,16 @@
   kubernetes.core.helm:
     name: cert-manager
     chart_ref: jetstack/cert-manager
-    namespace: jetstack
+    namespace: cert-manager
     create_namespace: true
     values_files:
       - /root/.kube/ressources/certmanager/helm/cert-manager-values.yml
   when: cert_manager_release_info.status is undefined or cert_manager_release_info.status.status != "deployed"
+
+- name: Apply all cert-manager resources from directory
+  shell: kubectl apply -f /root/.kube/ressources/certmanager/ 
+  register: kubectl_apply_result
+  changed_when: "'configured' in kubectl_apply_result.stdout or 'created' in kubectl_apply_result.stdout"
+  failed_when:  
+    - kubectl_apply_result.rc != 0
+    - "'no objects passed to apply' not in kubectl_apply_result.stderr"
