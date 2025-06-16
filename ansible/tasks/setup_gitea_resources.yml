@@ -64,8 +64,49 @@
       ingress:
         enabled: false
 
-      # Resource limits
-      resources:
+      # Resource limits# Gitea Helm Values - Simple PostgreSQL setup
+      global:
+        imageRegistry: ""
+        imagePullSecrets: []
+        storageClass: ""
+
+      # Deploy to backend_server node specifically
+      nodeSelector:
+        kubernetes.io/hostname: backendserver
+
+      # Resource configuration
+      replicaCount: 1
+
+      # Image configuration
+      image:
+        registry: "docker.gitea.com"
+        repository: gitea
+        tag: ""
+        pullPolicy: IfNotPresent
+        rootless: true
+
+      # Security context for rootless image
+      podSecurityContext:
+        fsGroup: 1000
+
+      containerSecurityContext:
+        allowPrivilegeEscalation: false
+        capabilities:
+          drop:
+            - ALL
+        privileged: false
+        readOnlyRootFilesystem: true
+        runAsGroup: 1000
+        runAsNonRoot: true
+        runAsUser: 1000
+
+      # Service configuration
+      service:
+        http:
+          type: ClusterIP
+          port: 3000
+        ssh:
+          type: ClusterIP
         limits:
           cpu: 1000m
           memory: 1Gi

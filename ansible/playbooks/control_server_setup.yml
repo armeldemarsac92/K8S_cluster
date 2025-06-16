@@ -32,10 +32,6 @@
     - name: Configure dashboard
       include_tasks: ../tasks/configure_k8s_dashboard.yml
 
-    # Setup Gitea resources before installation
-    - name: Setup Gitea resource directories and files
-      include_tasks: ../tasks/setup_gitea_resources.yml
-
     # Install Gitea
     - name: Install Gitea
       include_tasks: ../tasks/install_gitea.yml

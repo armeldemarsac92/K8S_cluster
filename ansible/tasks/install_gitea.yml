@@ -19,8 +19,8 @@
 
 - name: Copy Gitea value files
   ansible.builtin.copy:
-    src: "../ressources/k8s/gitea"
-    dest: "/root/.kube/ressources/gitea"
+    src: "../ressources/k8s/gitea/"
+    dest: "/root/.kube/ressources/gitea/"
     mode: '0644'
     backup: yes
 
@@ -56,10 +56,18 @@
     namespace: gitea
     create_namespace: true
     values_files:
-      - /root/.kube/ressources/gitea/gitea-values.yml
+      - /root/.kube/ressources/gitea/helm/gitea_values.yml
     timeout: 600s
   when: "'gitea' not in gitea_installed.stdout"
   register: gitea_helm_install
+
+- name: Apply all gitea resources from directory
+  shell: kubectl apply -f /root/.kube/ressources/gitea/ 
+  register: kubectl_apply_result
+  changed_when: "'configured' in kubectl_apply_result.stdout or 'created' in kubectl_apply_result.stdout"
+  failed_when:  
+    - kubectl_apply_result.rc != 0
+    - "'no objects passed to apply' not in kubectl_apply_result.stderr"
 
 - name: Get Gitea service information
   kubernetes.core.k8s_info:

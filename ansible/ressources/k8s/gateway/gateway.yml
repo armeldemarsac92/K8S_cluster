@@ -33,9 +33,15 @@ spec:
     allowedRoutes:
       namespaces:
         from: All
-  - name: gitea-http
-    port: 80
-    protocol: HTTP
+  - name: global-https
+    port: 443
+    protocol: HTTPS
+    hostname: "otterstack.local"
+    tls:
+      mode: Terminate
+      certificateRefs:
+        - kind: Secret
+          name: global-cert-secret
     allowedRoutes:
       namespaces:
         from: All

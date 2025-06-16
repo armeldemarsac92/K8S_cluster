@@ -1,4 +1,4 @@
-# Gitea Helm Values - Updated for your infrastructure with proper database config
+# Gitea Helm Values - Simple PostgreSQL setup
 global:
   imageRegistry: ""
   imagePullSecrets: []
@@ -11,18 +11,11 @@ nodeSelector:
 # Resource configuration
 replicaCount: 1
 
-strategy:
-  type: "RollingUpdate"
-  rollingUpdate:
-    maxSurge: "100%"
-    maxUnavailable: 0
-
 # Image configuration
 image:
   registry: "docker.gitea.com"
   repository: gitea
   tag: ""
-  digest: ""
   pullPolicy: IfNotPresent
   rootless: true
 
@@ -46,18 +39,57 @@ service:
   http:
     type: ClusterIP
     port: 3000
-    clusterIP: None
   ssh:
     type: ClusterIP
     port: 22
-    clusterIP: None
 
-# Ingress disabled for now
+# Ingress disabled
 ingress:
   enabled: false
 
-# Resource limits
-resources:
+# Resource limits# Gitea Helm Values - Simple PostgreSQL setup
+global:
+  imageRegistry: ""
+  imagePullSecrets: []
+  storageClass: ""
+
+# Deploy to backend_server node specifically
+nodeSelector:
+  kubernetes.io/hostname: backendserver
+
+# Resource configuration
+replicaCount: 1
+
+# Image configuration
+image:
+  registry: "docker.gitea.com"
+  repository: gitea
+  tag: ""
+  pullPolicy: IfNotPresent
+  rootless: true
+
+# Security context for rootless image
+podSecurityContext:
+  fsGroup: 1000
+
+containerSecurityContext:
+  allowPrivilegeEscalation: false
+  capabilities:
+    drop:
+      - ALL
+  privileged: false
+  readOnlyRootFilesystem: true
+  runAsGroup: 1000
+  runAsNonRoot: true
+  runAsUser: 1000
+
+# Service configuration
+service:
+  http:
+    type: ClusterIP
+    port: 3000
+  ssh:
+    type: ClusterIP
   limits:
     cpu: 1000m
     memory: 1Gi
@@ -70,13 +102,9 @@ persistence:
   enabled: true
   create: true
   mount: true
-  claimName: gitea-shared-storage
   size: 10Gi
   accessModes:
     - ReadWriteOnce
-  storageClass: ""
-  annotations:
-    helm.sh/resource-policy: keep
 
 # Gitea configuration
 gitea:
@@ -90,63 +118,52 @@ gitea:
     # Server configuration
     server:
       SSH_PORT: 22
-      SSH_LISTEN_PORT: 2222  # For rootless image
+      SSH_LISTEN_PORT: 2222
       HTTP_PORT: 3000
-      ROOT_URL: "http://gitea.local:3000"
+      ROOT_URL: "http://otterstack.local:3000/gitea"
+      DOMAIN: "otterstack.local"
       DISABLE_SSH: false
 
-    # Database configuration - Connect to external PostgreSQL database_server
+    # Database configuration - Connect to external PostgreSQL
     database:
       DB_TYPE: postgres
-      HOST: "192.168.2.12:5432"  # Your database_server IP
+      HOST: "192.168.2.12:5432"
       NAME: gitea
       USER: gitea
-      PASSWD: gitea_secure_password_2024  # Updated to match the database setup
+      PASSWD: gitea_secure_password_2024
       SSL_MODE: disable
 
-    # Cache configuration using Redis
+    # Use file-based cache and sessions (no Redis)
     cache:
-      ENABLED: true
-      ADAPTER: redis
-      HOST: "redis://gitea-valkey-master:6379/0"
+      ENABLED: false
 
-    # Session configuration
     session:
-      PROVIDER: redis
-      PROVIDER_CONFIG: "network=tcp,addr=gitea-valkey-master:6379,db=1"
+      PROVIDER: file
 
     # Security settings
     security:
       INSTALL_LOCK: true
-      SECRET_KEY: "your-secret-key-change-this-in-production"
-      INTERNAL_TOKEN: "your-internal-token-change-this-in-production"
+      SECRET_KEY: "gitea-secret-key-change-in-production"
+      INTERNAL_TOKEN: "gitea-internal-token-change-in-production"
 
     # Repository settings
     repository:
       ROOT: "/data/git/repositories"
       DEFAULT_BRANCH: main
 
-    # Indexer settings
-    indexer:
-      ISSUE_INDEXER_TYPE: bleve
-      REPO_INDEXER_ENABLED: true
-
-# Enable Redis for caching and sessions
+# Disable all external dependencies
 valkey:
   enabled: false
 
 valkey-cluster:
   enabled: false
 
-# Disable built-in PostgreSQL since we're using external MySQL database
 postgresql:
   enabled: false
 
 postgresql-ha:
   enabled: false
 
-# Monitoring
+# Disable monitoring
 metrics:
   enabled: false
-  serviceMonitor:
-    enabled: false
