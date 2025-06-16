@@ -150,3 +150,24 @@ EOF
 
 echo "Wrote network configuration to $VARS_FILE" >&2
 echo $RANDOM_IP
+
+# Update /etc/hosts with the new target IP for otterstack domains
+HOSTS_FILE="/etc/hosts"
+TMP_HOSTS=$(mktemp)
+
+echo "Updating $HOSTS_FILE for otterstack.local and otterstack.dashboard.local..." >&2
+
+# Remove existing entries for otterstack.local and otterstack.dashboard.local
+grep -vE '\s+otterstack(\.dashboard)?\.local' "$HOSTS_FILE" > "$TMP_HOSTS"
+
+# Append new entry
+echo -e "$RANDOM_IP otterstack.local otterstack.dashboard.local" >> "$TMP_HOSTS"
+
+# Overwrite hosts file with updated content
+if sudo cp "$TMP_HOSTS" "$HOSTS_FILE"; then
+  echo "Successfully updated $HOSTS_FILE with: $RANDOM_IP otterstack.local otterstack.dashboard.local" >&2
+else
+  echo "Error: Failed to update $HOSTS_FILE" >&2
+fi
+
+rm "$TMP_HOSTS"
