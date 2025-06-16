@@ -955,6 +955,7 @@ gateway:
     stream:
        - containerPort: 8899 # configure the service to forward traffic to the TLS port
          servicePort: 8899
+         nodePort: 31000
     tls:
       appProtocol: ""
       containerPort: 8443
@@ -962,6 +963,7 @@ gateway:
       parameters:
       - http2
       servicePort: 443
+      nodePort: 30305
     type: LoadBalancer
   readinessProbe:
     failureThreshold: 3

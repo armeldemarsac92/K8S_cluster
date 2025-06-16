@@ -2,7 +2,6 @@ apiVersion: cert-manager.io/v1
 kind: Certificate
 metadata:
   name: global-cert
-  namespace: kong
 spec:
   # Secret names are always required.
   secretName: global-cert-secret
